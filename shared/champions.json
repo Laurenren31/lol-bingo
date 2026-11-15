@@ -1,0 +1,1700 @@
+{
+  "columns": [
+    "鬥士",
+    "坦克",
+    "法師",
+    "射手",
+    "輔助"
+  ],
+  "rule": "column = 官網英雄頁「角色」欄位的第一個角色；刺客併入輔助",
+  "fetchedAt": "2026-11-15",
+  "champions": [
+    {
+      "name": "伊瑞莉雅",
+      "slug": "irelia",
+      "officialRoles": [
+        "鬥士",
+        "刺客"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/irelia/"
+    },
+    {
+      "name": "伊羅旖",
+      "slug": "illaoi",
+      "officialRoles": [
+        "鬥士",
+        "坦克"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/illaoi/"
+    },
+    {
+      "name": "克雷德",
+      "slug": "kled",
+      "officialRoles": [
+        "鬥士"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/kled/"
+    },
+    {
+      "name": "剛普朗克",
+      "slug": "gangplank",
+      "officialRoles": [
+        "鬥士"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/gangplank/"
+    },
+    {
+      "name": "卡蜜兒",
+      "slug": "camille",
+      "officialRoles": [
+        "鬥士",
+        "刺客"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/camille/"
+    },
+    {
+      "name": "厄薩斯",
+      "slug": "aatrox",
+      "officialRoles": [
+        "鬥士"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/aatrox/"
+    },
+    {
+      "name": "古拉格斯",
+      "slug": "gragas",
+      "officialRoles": [
+        "鬥士",
+        "法師"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/gragas/"
+    },
+    {
+      "name": "吶兒",
+      "slug": "gnar",
+      "officialRoles": [
+        "鬥士",
+        "坦克"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/gnar/"
+    },
+    {
+      "name": "嘉文四世",
+      "slug": "jarvaniv",
+      "officialRoles": [
+        "鬥士",
+        "坦克"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/jarvaniv/"
+    },
+    {
+      "name": "夜曲",
+      "slug": "nocturne",
+      "officialRoles": [
+        "鬥士",
+        "刺客"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/nocturne/"
+    },
+    {
+      "name": "安比薩",
+      "slug": "ambessa",
+      "officialRoles": [
+        "鬥士",
+        "刺客"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/ambessa/"
+    },
+    {
+      "name": "布蕾爾",
+      "slug": "briar",
+      "officialRoles": [
+        "鬥士",
+        "刺客"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/briar/"
+    },
+    {
+      "name": "希瓦娜",
+      "slug": "shyvana",
+      "officialRoles": [
+        "鬥士",
+        "坦克"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/shyvana/"
+    },
+    {
+      "name": "弗力貝爾",
+      "slug": "volibear",
+      "officialRoles": [
+        "鬥士",
+        "坦克"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/volibear/"
+    },
+    {
+      "name": "悟空",
+      "slug": "monkeyking",
+      "officialRoles": [
+        "鬥士",
+        "坦克"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/monkeyking/"
+    },
+    {
+      "name": "慨影",
+      "slug": "kayn",
+      "officialRoles": [
+        "鬥士",
+        "刺客"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/kayn/"
+    },
+    {
+      "name": "易大師",
+      "slug": "masteryi",
+      "officialRoles": [
+        "鬥士",
+        "刺客"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/masteryi/"
+    },
+    {
+      "name": "李星",
+      "slug": "leesin",
+      "officialRoles": [
+        "鬥士",
+        "刺客"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/leesin/"
+    },
+    {
+      "name": "杰西",
+      "slug": "jayce",
+      "officialRoles": [
+        "鬥士",
+        "射手"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/jayce/"
+    },
+    {
+      "name": "歐拉夫",
+      "slug": "olaf",
+      "officialRoles": [
+        "鬥士",
+        "坦克"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/olaf/"
+    },
+    {
+      "name": "沃維克",
+      "slug": "warwick",
+      "officialRoles": [
+        "鬥士",
+        "坦克"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/warwick/"
+    },
+    {
+      "name": "泰達米爾",
+      "slug": "tryndamere",
+      "officialRoles": [
+        "鬥士",
+        "刺客"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/tryndamere/"
+    },
+    {
+      "name": "淣菈",
+      "slug": "nilah",
+      "officialRoles": [
+        "鬥士",
+        "刺客"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/nilah/"
+    },
+    {
+      "name": "潘森",
+      "slug": "pantheon",
+      "officialRoles": [
+        "鬥士",
+        "刺客"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/pantheon/"
+    },
+    {
+      "name": "烏爾加特",
+      "slug": "urgot",
+      "officialRoles": [
+        "鬥士",
+        "坦克"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/urgot/"
+    },
+    {
+      "name": "烏迪爾",
+      "slug": "udyr",
+      "officialRoles": [
+        "鬥士",
+        "坦克"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/udyr/"
+    },
+    {
+      "name": "特朗德",
+      "slug": "trundle",
+      "officialRoles": [
+        "鬥士",
+        "坦克"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/trundle/"
+    },
+    {
+      "name": "犽凝",
+      "slug": "yone",
+      "officialRoles": [
+        "鬥士",
+        "刺客"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/yone/"
+    },
+    {
+      "name": "犽宿",
+      "slug": "yasuo",
+      "officialRoles": [
+        "鬥士",
+        "刺客"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/yasuo/"
+    },
+    {
+      "name": "約瑞科",
+      "slug": "yorick",
+      "officialRoles": [
+        "鬥士",
+        "坦克"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/yorick/"
+    },
+    {
+      "name": "納瑟斯",
+      "slug": "nasus",
+      "officialRoles": [
+        "鬥士",
+        "坦克"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/nasus/"
+    },
+    {
+      "name": "維爾戈",
+      "slug": "viego",
+      "officialRoles": [
+        "鬥士",
+        "刺客"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/viego/"
+    },
+    {
+      "name": "莉莉亞",
+      "slug": "lillia",
+      "officialRoles": [
+        "鬥士",
+        "法師"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/lillia/"
+    },
+    {
+      "name": "菲歐拉",
+      "slug": "fiora",
+      "officialRoles": [
+        "鬥士",
+        "刺客"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/fiora/"
+    },
+    {
+      "name": "菲艾",
+      "slug": "vi",
+      "officialRoles": [
+        "鬥士",
+        "刺客"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/vi/"
+    },
+    {
+      "name": "蓋倫",
+      "slug": "garen",
+      "officialRoles": [
+        "鬥士",
+        "坦克"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/garen/"
+    },
+    {
+      "name": "薩亨",
+      "slug": "zaahen",
+      "officialRoles": [
+        "鬥士"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/zaahen/"
+    },
+    {
+      "name": "藍寶",
+      "slug": "rumble",
+      "officialRoles": [
+        "鬥士",
+        "法師"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/rumble/"
+    },
+    {
+      "name": "貝爾薇斯",
+      "slug": "belveth",
+      "officialRoles": [
+        "鬥士"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/belveth/"
+    },
+    {
+      "name": "賈克斯",
+      "slug": "jax",
+      "officialRoles": [
+        "鬥士"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/jax/"
+    },
+    {
+      "name": "賽特",
+      "slug": "sett",
+      "officialRoles": [
+        "鬥士",
+        "坦克"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/sett/"
+    },
+    {
+      "name": "赫克林",
+      "slug": "hecarim",
+      "officialRoles": [
+        "鬥士",
+        "坦克"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/hecarim/"
+    },
+    {
+      "name": "趙信",
+      "slug": "xinzhao",
+      "officialRoles": [
+        "鬥士",
+        "坦克"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/xinzhao/"
+    },
+    {
+      "name": "達瑞斯",
+      "slug": "darius",
+      "officialRoles": [
+        "鬥士",
+        "坦克"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/darius/"
+    },
+    {
+      "name": "關",
+      "slug": "gwen",
+      "officialRoles": [
+        "鬥士"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/gwen/"
+    },
+    {
+      "name": "雷尼克頓",
+      "slug": "renekton",
+      "officialRoles": [
+        "鬥士",
+        "坦克"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/renekton/"
+    },
+    {
+      "name": "雷玟",
+      "slug": "riven",
+      "officialRoles": [
+        "鬥士",
+        "刺客"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/riven/"
+    },
+    {
+      "name": "雷珂煞",
+      "slug": "reksai",
+      "officialRoles": [
+        "鬥士",
+        "坦克"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/reksai/"
+    },
+    {
+      "name": "魔鬥凱薩",
+      "slug": "mordekaiser",
+      "officialRoles": [
+        "鬥士",
+        "法師"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/mordekaiser/"
+    },
+    {
+      "name": "黛安娜",
+      "slug": "diana",
+      "officialRoles": [
+        "鬥士",
+        "刺客"
+      ],
+      "column": "鬥士",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/diana/"
+    },
+    {
+      "name": "亞歷斯塔",
+      "slug": "alistar",
+      "officialRoles": [
+        "坦克",
+        "輔助"
+      ],
+      "column": "坦克",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/alistar/"
+    },
+    {
+      "name": "加里歐",
+      "slug": "galio",
+      "officialRoles": [
+        "坦克",
+        "法師"
+      ],
+      "column": "坦克",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/galio/"
+    },
+    {
+      "name": "努努和威朗普",
+      "slug": "nunu",
+      "officialRoles": [
+        "坦克",
+        "法師"
+      ],
+      "column": "坦克",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/nunu/"
+    },
+    {
+      "name": "卡桑帝",
+      "slug": "ksante",
+      "officialRoles": [
+        "坦克",
+        "鬥士"
+      ],
+      "column": "坦克",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/ksante/"
+    },
+    {
+      "name": "史加納",
+      "slug": "skarner",
+      "officialRoles": [
+        "坦克",
+        "鬥士"
+      ],
+      "column": "坦克",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/skarner/"
+    },
+    {
+      "name": "史瓦妮",
+      "slug": "sejuani",
+      "officialRoles": [
+        "坦克"
+      ],
+      "column": "坦克",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/sejuani/"
+    },
+    {
+      "name": "布郎姆",
+      "slug": "braum",
+      "officialRoles": [
+        "坦克",
+        "輔助"
+      ],
+      "column": "坦克",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/braum/"
+    },
+    {
+      "name": "布里茨",
+      "slug": "blitzcrank",
+      "officialRoles": [
+        "坦克",
+        "輔助"
+      ],
+      "column": "坦克",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/blitzcrank/"
+    },
+    {
+      "name": "慎",
+      "slug": "shen",
+      "officialRoles": [
+        "坦克"
+      ],
+      "column": "坦克",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/shen/"
+    },
+    {
+      "name": "拉姆斯",
+      "slug": "rammus",
+      "officialRoles": [
+        "坦克"
+      ],
+      "column": "坦克",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/rammus/"
+    },
+    {
+      "name": "札克",
+      "slug": "zac",
+      "officialRoles": [
+        "坦克",
+        "鬥士"
+      ],
+      "column": "坦克",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/zac/"
+    },
+    {
+      "name": "波比",
+      "slug": "poppy",
+      "officialRoles": [
+        "坦克",
+        "鬥士"
+      ],
+      "column": "坦克",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/poppy/"
+    },
+    {
+      "name": "科加斯",
+      "slug": "chogath",
+      "officialRoles": [
+        "坦克",
+        "法師"
+      ],
+      "column": "坦克",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/chogath/"
+    },
+    {
+      "name": "納帝魯斯",
+      "slug": "nautilus",
+      "officialRoles": [
+        "坦克",
+        "輔助"
+      ],
+      "column": "坦克",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/nautilus/"
+    },
+    {
+      "name": "茂凱",
+      "slug": "maokai",
+      "officialRoles": [
+        "坦克",
+        "輔助"
+      ],
+      "column": "坦克",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/maokai/"
+    },
+    {
+      "name": "蒙多醫生",
+      "slug": "drmundo",
+      "officialRoles": [
+        "坦克",
+        "鬥士"
+      ],
+      "column": "坦克",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/drmundo/"
+    },
+    {
+      "name": "貪啃奇",
+      "slug": "tahmkench",
+      "officialRoles": [
+        "坦克",
+        "輔助"
+      ],
+      "column": "坦克",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/tahmkench/"
+    },
+    {
+      "name": "賽恩",
+      "slug": "sion",
+      "officialRoles": [
+        "坦克",
+        "鬥士"
+      ],
+      "column": "坦克",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/sion/"
+    },
+    {
+      "name": "辛吉德",
+      "slug": "singed",
+      "officialRoles": [
+        "坦克",
+        "法師"
+      ],
+      "column": "坦克",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/singed/"
+    },
+    {
+      "name": "鄂爾",
+      "slug": "ornn",
+      "officialRoles": [
+        "坦克"
+      ],
+      "column": "坦克",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/ornn/"
+    },
+    {
+      "name": "銳兒",
+      "slug": "rell",
+      "officialRoles": [
+        "坦克",
+        "輔助"
+      ],
+      "column": "坦克",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/rell/"
+    },
+    {
+      "name": "阿姆姆",
+      "slug": "amumu",
+      "officialRoles": [
+        "坦克",
+        "輔助"
+      ],
+      "column": "坦克",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/amumu/"
+    },
+    {
+      "name": "雷歐娜",
+      "slug": "leona",
+      "officialRoles": [
+        "坦克",
+        "輔助"
+      ],
+      "column": "坦克",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/leona/"
+    },
+    {
+      "name": "墨菲特",
+      "slug": "malphite",
+      "officialRoles": [
+        "坦克",
+        "法師"
+      ],
+      "column": "坦克",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/malphite/"
+    },
+    {
+      "name": "凱能",
+      "slug": "kennen",
+      "officialRoles": [
+        "法師"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/kennen/"
+    },
+    {
+      "name": "卡爾瑟斯",
+      "slug": "karthus",
+      "officialRoles": [
+        "法師"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/karthus/"
+    },
+    {
+      "name": "卡瑪",
+      "slug": "karma",
+      "officialRoles": [
+        "法師",
+        "輔助"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/karma/"
+    },
+    {
+      "name": "卡莎碧雅",
+      "slug": "cassiopeia",
+      "officialRoles": [
+        "法師"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/cassiopeia/"
+    },
+    {
+      "name": "塔莉雅",
+      "slug": "taliyah",
+      "officialRoles": [
+        "法師",
+        "輔助"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/taliyah/"
+    },
+    {
+      "name": "奧莉安娜",
+      "slug": "orianna",
+      "officialRoles": [
+        "法師",
+        "輔助"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/orianna/"
+    },
+    {
+      "name": "妮可",
+      "slug": "neeko",
+      "officialRoles": [
+        "法師",
+        "輔助"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/neeko/"
+    },
+    {
+      "name": "威寇茲",
+      "slug": "velkoz",
+      "officialRoles": [
+        "法師",
+        "輔助"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/velkoz/"
+    },
+    {
+      "name": "安妮",
+      "slug": "annie",
+      "officialRoles": [
+        "法師",
+        "輔助"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/annie/"
+    },
+    {
+      "name": "布蘭德",
+      "slug": "brand",
+      "officialRoles": [
+        "法師",
+        "輔助"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/brand/"
+    },
+    {
+      "name": "希格斯",
+      "slug": "ziggs",
+      "officialRoles": [
+        "法師"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/ziggs/"
+    },
+    {
+      "name": "弗拉迪米爾",
+      "slug": "vladimir",
+      "officialRoles": [
+        "法師",
+        "鬥士"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/vladimir/"
+    },
+    {
+      "name": "拉克絲",
+      "slug": "lux",
+      "officialRoles": [
+        "法師",
+        "輔助"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/lux/"
+    },
+    {
+      "name": "斯溫",
+      "slug": "swain",
+      "officialRoles": [
+        "法師",
+        "輔助"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/swain/"
+    },
+    {
+      "name": "星朵拉",
+      "slug": "syndra",
+      "officialRoles": [
+        "法師"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/syndra/"
+    },
+    {
+      "name": "枷蘿",
+      "slug": "zyra",
+      "officialRoles": [
+        "法師",
+        "輔助"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/zyra/"
+    },
+    {
+      "name": "柔依",
+      "slug": "zoe",
+      "officialRoles": [
+        "法師"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/zoe/"
+    },
+    {
+      "name": "梅爾",
+      "slug": "mel",
+      "officialRoles": [
+        "法師",
+        "輔助"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/mel/"
+    },
+    {
+      "name": "歐羅拉",
+      "slug": "aurora",
+      "officialRoles": [
+        "法師",
+        "刺客"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/aurora/"
+    },
+    {
+      "name": "漢默丁格",
+      "slug": "heimerdinger",
+      "officialRoles": [
+        "法師",
+        "輔助"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/heimerdinger/"
+    },
+    {
+      "name": "維克特",
+      "slug": "viktor",
+      "officialRoles": [
+        "法師"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/viktor/"
+    },
+    {
+      "name": "維迦",
+      "slug": "veigar",
+      "officialRoles": [
+        "法師"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/veigar/"
+    },
+    {
+      "name": "翱銳龍獸",
+      "slug": "aurelionsol",
+      "officialRoles": [
+        "法師"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/aurelionsol/"
+    },
+    {
+      "name": "艾妮維亞",
+      "slug": "anivia",
+      "officialRoles": [
+        "法師"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/anivia/"
+    },
+    {
+      "name": "薇可絲",
+      "slug": "vex",
+      "officialRoles": [
+        "法師"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/vex/"
+    },
+    {
+      "name": "費德提克",
+      "slug": "fiddlesticks",
+      "officialRoles": [
+        "法師",
+        "輔助"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/fiddlesticks/"
+    },
+    {
+      "name": "賽勒斯",
+      "slug": "sylas",
+      "officialRoles": [
+        "法師",
+        "刺客"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/sylas/"
+    },
+    {
+      "name": "赫威",
+      "slug": "hwei",
+      "officialRoles": [
+        "法師",
+        "輔助"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/hwei/"
+    },
+    {
+      "name": "逆命",
+      "slug": "twistedfate",
+      "officialRoles": [
+        "法師",
+        "射手"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/twistedfate/"
+    },
+    {
+      "name": "阿璃",
+      "slug": "ahri",
+      "officialRoles": [
+        "法師",
+        "刺客"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/ahri/"
+    },
+    {
+      "name": "阿祈爾",
+      "slug": "azir",
+      "officialRoles": [
+        "法師",
+        "射手"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/azir/"
+    },
+    {
+      "name": "雷茲",
+      "slug": "ryze",
+      "officialRoles": [
+        "法師"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/ryze/"
+    },
+    {
+      "name": "馬爾札哈",
+      "slug": "malzahar",
+      "officialRoles": [
+        "法師"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/malzahar/"
+    },
+    {
+      "name": "麗珊卓",
+      "slug": "lissandra",
+      "officialRoles": [
+        "法師"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/lissandra/"
+    },
+    {
+      "name": "齊勒斯",
+      "slug": "xerath",
+      "officialRoles": [
+        "法師",
+        "輔助"
+      ],
+      "column": "法師",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/xerath/"
+    },
+    {
+      "name": "亞菲利歐",
+      "slug": "aphelios",
+      "officialRoles": [
+        "射手"
+      ],
+      "column": "射手",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/aphelios/"
+    },
+    {
+      "name": "伊澤瑞爾",
+      "slug": "ezreal",
+      "officialRoles": [
+        "射手",
+        "法師"
+      ],
+      "column": "射手",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/ezreal/"
+    },
+    {
+      "name": "克黎思妲",
+      "slug": "kalista",
+      "officialRoles": [
+        "射手"
+      ],
+      "column": "射手",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/kalista/"
+    },
+    {
+      "name": "凱爾",
+      "slug": "kayle",
+      "officialRoles": [
+        "射手",
+        "法師"
+      ],
+      "column": "射手",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/kayle/"
+    },
+    {
+      "name": "凱特琳",
+      "slug": "caitlyn",
+      "officialRoles": [
+        "射手"
+      ],
+      "column": "射手",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/caitlyn/"
+    },
+    {
+      "name": "凱莎",
+      "slug": "kaisa",
+      "officialRoles": [
+        "射手",
+        "法師"
+      ],
+      "column": "射手",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/kaisa/"
+    },
+    {
+      "name": "剎雅",
+      "slug": "xayah",
+      "officialRoles": [
+        "射手"
+      ],
+      "column": "射手",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/xayah/"
+    },
+    {
+      "name": "史矛德",
+      "slug": "smolder",
+      "officialRoles": [
+        "射手",
+        "法師"
+      ],
+      "column": "射手",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/smolder/"
+    },
+    {
+      "name": "吉茵珂絲",
+      "slug": "jinx",
+      "officialRoles": [
+        "射手"
+      ],
+      "column": "射手",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/jinx/"
+    },
+    {
+      "name": "圖奇",
+      "slug": "twitch",
+      "officialRoles": [
+        "射手",
+        "刺客"
+      ],
+      "column": "射手",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/twitch/"
+    },
+    {
+      "name": "埃可尚",
+      "slug": "akshan",
+      "officialRoles": [
+        "射手",
+        "刺客"
+      ],
+      "column": "射手",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/akshan/"
+    },
+    {
+      "name": "好運姐",
+      "slug": "missfortune",
+      "officialRoles": [
+        "射手",
+        "法師"
+      ],
+      "column": "射手",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/missfortune/"
+    },
+    {
+      "name": "婕莉",
+      "slug": "zeri",
+      "officialRoles": [
+        "射手"
+      ],
+      "column": "射手",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/zeri/"
+    },
+    {
+      "name": "寇格魔",
+      "slug": "kogmaw",
+      "officialRoles": [
+        "射手",
+        "法師"
+      ],
+      "column": "射手",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/kogmaw/"
+    },
+    {
+      "name": "尤娜拉",
+      "slug": "yunara",
+      "officialRoles": [
+        "射手"
+      ],
+      "column": "射手",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/yunara/"
+    },
+    {
+      "name": "崔絲塔娜",
+      "slug": "tristana",
+      "officialRoles": [
+        "射手",
+        "刺客"
+      ],
+      "column": "射手",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/tristana/"
+    },
+    {
+      "name": "希維爾",
+      "slug": "sivir",
+      "officialRoles": [
+        "射手"
+      ],
+      "column": "射手",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/sivir/"
+    },
+    {
+      "name": "庫奇",
+      "slug": "corki",
+      "officialRoles": [
+        "射手",
+        "法師"
+      ],
+      "column": "射手",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/corki/"
+    },
+    {
+      "name": "提摩",
+      "slug": "teemo",
+      "officialRoles": [
+        "射手",
+        "法師"
+      ],
+      "column": "射手",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/teemo/"
+    },
+    {
+      "name": "汎",
+      "slug": "vayne",
+      "officialRoles": [
+        "射手",
+        "刺客"
+      ],
+      "column": "射手",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/vayne/"
+    },
+    {
+      "name": "法洛士",
+      "slug": "varus",
+      "officialRoles": [
+        "射手",
+        "法師"
+      ],
+      "column": "射手",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/varus/"
+    },
+    {
+      "name": "煞蜜拉",
+      "slug": "samira",
+      "officialRoles": [
+        "射手",
+        "刺客"
+      ],
+      "column": "射手",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/samira/"
+    },
+    {
+      "name": "燼",
+      "slug": "jhin",
+      "officialRoles": [
+        "射手",
+        "法師"
+      ],
+      "column": "射手",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/jhin/"
+    },
+    {
+      "name": "艾希",
+      "slug": "ashe",
+      "officialRoles": [
+        "射手",
+        "輔助"
+      ],
+      "column": "射手",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/ashe/"
+    },
+    {
+      "name": "葛雷夫",
+      "slug": "graves",
+      "officialRoles": [
+        "射手"
+      ],
+      "column": "射手",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/graves/"
+    },
+    {
+      "name": "葵恩",
+      "slug": "quinn",
+      "officialRoles": [
+        "射手",
+        "刺客"
+      ],
+      "column": "射手",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/quinn/"
+    },
+    {
+      "name": "路西恩",
+      "slug": "lucian",
+      "officialRoles": [
+        "射手",
+        "刺客"
+      ],
+      "column": "射手",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/lucian/"
+    },
+    {
+      "name": "達瑞文",
+      "slug": "draven",
+      "officialRoles": [
+        "射手"
+      ],
+      "column": "射手",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/draven/"
+    },
+    {
+      "name": "鏡爪",
+      "slug": "kindred",
+      "officialRoles": [
+        "射手"
+      ],
+      "column": "射手",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/kindred/"
+    },
+    {
+      "name": "伊芙琳",
+      "slug": "evelynn",
+      "officialRoles": [
+        "刺客",
+        "法師"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/evelynn/"
+    },
+    {
+      "name": "伊莉絲",
+      "slug": "elise",
+      "officialRoles": [
+        "刺客",
+        "法師"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/elise/"
+    },
+    {
+      "name": "劫",
+      "slug": "zed",
+      "officialRoles": [
+        "刺客"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/zed/"
+    },
+    {
+      "name": "勒布朗",
+      "slug": "leblanc",
+      "officialRoles": [
+        "刺客",
+        "法師"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/leblanc/"
+    },
+    {
+      "name": "卡力斯",
+      "slug": "khazix",
+      "officialRoles": [
+        "刺客"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/khazix/"
+    },
+    {
+      "name": "卡特蓮娜",
+      "slug": "katarina",
+      "officialRoles": [
+        "刺客",
+        "法師"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/katarina/"
+    },
+    {
+      "name": "卡薩丁",
+      "slug": "kassadin",
+      "officialRoles": [
+        "刺客",
+        "法師"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/kassadin/"
+    },
+    {
+      "name": "埃爾文",
+      "slug": "ivern",
+      "officialRoles": [
+        "輔助",
+        "法師"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/ivern/"
+    },
+    {
+      "name": "塔里克",
+      "slug": "taric",
+      "officialRoles": [
+        "輔助",
+        "坦克"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/taric/"
+    },
+    {
+      "name": "塔隆",
+      "slug": "talon",
+      "officialRoles": [
+        "刺客"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/talon/"
+    },
+    {
+      "name": "奈德麗",
+      "slug": "nidalee",
+      "officialRoles": [
+        "刺客",
+        "法師"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/nidalee/"
+    },
+    {
+      "name": "姍娜",
+      "slug": "senna",
+      "officialRoles": [
+        "輔助",
+        "射手"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/senna/"
+    },
+    {
+      "name": "姬亞娜",
+      "slug": "qiyana",
+      "officialRoles": [
+        "刺客"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/qiyana/"
+    },
+    {
+      "name": "娜米",
+      "slug": "nami",
+      "officialRoles": [
+        "輔助",
+        "法師"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/nami/"
+    },
+    {
+      "name": "娜菲芮",
+      "slug": "naafiri",
+      "officialRoles": [
+        "刺客",
+        "鬥士"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/naafiri/"
+    },
+    {
+      "name": "巴德",
+      "slug": "bard",
+      "officialRoles": [
+        "輔助",
+        "法師"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/bard/"
+    },
+    {
+      "name": "悠咪",
+      "slug": "yuumi",
+      "officialRoles": [
+        "輔助",
+        "法師"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/yuumi/"
+    },
+    {
+      "name": "極靈",
+      "slug": "zilean",
+      "officialRoles": [
+        "輔助",
+        "法師"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/zilean/"
+    },
+    {
+      "name": "洛克",
+      "slug": "locke",
+      "officialRoles": [
+        "刺客",
+        "法師"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/locke/"
+    },
+    {
+      "name": "派克",
+      "slug": "pyke",
+      "officialRoles": [
+        "輔助",
+        "刺客"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/pyke/"
+    },
+    {
+      "name": "珍娜",
+      "slug": "janna",
+      "officialRoles": [
+        "輔助",
+        "法師"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/janna/"
+    },
+    {
+      "name": "瑟菈紛",
+      "slug": "seraphine",
+      "officialRoles": [
+        "輔助",
+        "法師"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/seraphine/"
+    },
+    {
+      "name": "瑟雷西",
+      "slug": "thresh",
+      "officialRoles": [
+        "輔助",
+        "坦克"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/thresh/"
+    },
+    {
+      "name": "睿娜妲．格萊斯克",
+      "slug": "renata",
+      "officialRoles": [
+        "輔助",
+        "法師"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/renata/"
+    },
+    {
+      "name": "米里歐",
+      "slug": "milio",
+      "officialRoles": [
+        "輔助",
+        "法師"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/milio/"
+    },
+    {
+      "name": "索娜",
+      "slug": "sona",
+      "officialRoles": [
+        "輔助",
+        "法師"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/sona/"
+    },
+    {
+      "name": "索拉卡",
+      "slug": "soraka",
+      "officialRoles": [
+        "輔助",
+        "法師"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/soraka/"
+    },
+    {
+      "name": "艾克",
+      "slug": "ekko",
+      "officialRoles": [
+        "刺客",
+        "法師"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/ekko/"
+    },
+    {
+      "name": "薩科",
+      "slug": "shaco",
+      "officialRoles": [
+        "刺客"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/shaco/"
+    },
+    {
+      "name": "銳空",
+      "slug": "rakan",
+      "officialRoles": [
+        "輔助"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/rakan/"
+    },
+    {
+      "name": "阿卡莉",
+      "slug": "akali",
+      "officialRoles": [
+        "刺客"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/akali/"
+    },
+    {
+      "name": "雷葛爾",
+      "slug": "rengar",
+      "officialRoles": [
+        "刺客",
+        "鬥士"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/rengar/"
+    },
+    {
+      "name": "露璐",
+      "slug": "lulu",
+      "officialRoles": [
+        "輔助",
+        "法師"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/lulu/"
+    },
+    {
+      "name": "飛斯",
+      "slug": "fizz",
+      "officialRoles": [
+        "刺客",
+        "鬥士"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/fizz/"
+    },
+    {
+      "name": "魔甘娜",
+      "slug": "morgana",
+      "officialRoles": [
+        "輔助",
+        "法師"
+      ],
+      "column": "輔助",
+      "source": "https://www.leagueoflegends.com/zh-tw/champions/morgana/"
+    }
+  ]
+}

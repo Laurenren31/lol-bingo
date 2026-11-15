@@ -1,0 +1,239 @@
+import { describe, expect, it } from 'vitest';
+import {
+  HOST_GRACE_MS,
+  GameError,
+  addPlayer,
+  callChampion,
+  evaluateBingo,
+  linesOf,
+  newRoom,
+  newRound,
+  presenceFromSeen,
+  removePlayer,
+  seenField,
+  setBoardCount,
+  toPublicState,
+  transferHostIfNeeded,
+  uncallChampion,
+  updateSettings,
+  type RoomData,
+} from '../server/game';
+import { generateBoard, isValidBoard } from '../shared/board';
+import { ROOM_CODE_ALPHABET, generateRoomCode, normalizeNickname, normalizeRoomCode } from '../shared/validate';
+
+const rand = (n: number) => Math.floor(Math.random() * n);
+const T0 = 1_000_000;
+
+function roomWith(...nicks: string[]): RoomData {
+  const r = newRoom('ABC234', T0);
+  nicks.forEach((n, i) => addPlayer(r, `p${i}aaaaaaaa`, n, 'x', T0 + i, rand));
+  return r;
+}
+const P = (i: number) => `p${i}aaaaaaaa`;
+
+function callLine(r: RoomData, pid: string, board = 0, cells = [0, 1, 2, 3, 4]) {
+  for (const i of cells) callChampion(r, pid, r.boards[pid][board][i]);
+}
+
+describe('房號與暱稱', () => {
+  it('房號 6 碼、不含 0/O/1/I', () => {
+    expect(ROOM_CODE_ALPHABET).not.toMatch(/[0O1I]/);
+    for (let i = 0; i < 500; i++) {
+      const c = generateRoomCode(rand);
+      expect(c).toMatch(/^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6}$/);
+      expect(normalizeRoomCode(c.toLowerCase())).toBe(c);
+    }
+    expect(normalizeRoomCode('ABC10O')).toBeNull();
+    expect(normalizeRoomCode('ABC23')).toBeNull();
+    expect(normalizeRoomCode(123456)).toBeNull();
+  });
+
+  it('暱稱 1–12 字、去頭尾空白、擋控制字元', () => {
+    expect(normalizeNickname('  小明  ')).toBe('小明');
+    expect(normalizeNickname('一二三四五六七八九十一二')).toBe('一二三四五六七八九十一二');
+    expect(normalizeNickname('一二三四五六七八九十一二三')).toBeNull();
+    expect(normalizeNickname('   ')).toBeNull();
+    expect(normalizeNickname('a​b')).toBeNull();
+    expect(normalizeNickname('a\nb')).toBe('a b');
+    expect(normalizeNickname('a\u0007b')).toBeNull();
+    expect(normalizeNickname(null)).toBeNull();
+  });
+});
+
+describe('房間邏輯', () => {
+  it('第一位加入的是房主，預設 4 張合法盤面', () => {
+    const r = roomWith('A', 'B');
+    expect(r.hostId).toBe(P(0));
+    expect(r.boards[P(1)]).toHaveLength(4);
+    r.boards[P(1)].forEach((b) => expect(isValidBoard(b)).toBe(true));
+  });
+
+  it('喊叫：不重複，記錄喊的人與順序', () => {
+    const r = roomWith('A', 'B');
+    expect(callChampion(r, P(0), '伊瑞莉雅')).toBe(true);
+    expect(callChampion(r, P(1), '伊瑞莉雅')).toBe(false);
+    expect(callChampion(r, P(1), '亞歷斯塔')).toBe(true);
+    expect(r.calls.map((c) => [c.champion, c.byNick, c.seq])).toEqual([
+      ['伊瑞莉雅', 'A', 1],
+      ['亞歷斯塔', 'B', 2],
+    ]);
+  });
+
+  it('不在房內的人不能喊', () => {
+    const r = roomWith('A');
+    expect(() => callChampion(r, 'nobody123', '伊瑞莉雅')).toThrow(GameError);
+  });
+
+  it('達到條數就 BINGO，只宣告一次；取消喊叫後重算', () => {
+    const r = roomWith('A', 'B');
+    r.target = 1;
+    callLine(r, P(0));
+    const ann = evaluateBingo(r);
+    expect(ann.map((a) => a.playerId)).toContain(P(0));
+    expect(r.bingo).toContain(P(0));
+    expect(evaluateBingo(r).find((a) => a.playerId === P(0))).toBeUndefined(); // 不重複宣告
+
+    const before = linesOf(r, P(0));
+    expect(before).toBeGreaterThanOrEqual(1);
+    uncallChampion(r, P(1), r.boards[P(0)][0][2]);
+    evaluateBingo(r);
+    expect(linesOf(r, P(0))).toBeLessThan(before);
+    if (linesOf(r, P(0)) < 1) expect(r.bingo).not.toContain(P(0));
+  });
+
+  it('取消喊叫後重算（固定盤面，結果確定）', () => {
+    const r = roomWith('A');
+    const b = generateBoard(rand);
+    r.boards[P(0)] = [b];
+    r.target = 2;
+    callLine(r, P(0), 0, [0, 1, 2, 3, 4]); // 第 1 橫排
+    callLine(r, P(0), 0, [5, 10, 15, 20]); // 第 1 直排（0 已喊）
+    expect(evaluateBingo(r)).toHaveLength(1);
+    expect(linesOf(r, P(0))).toBe(2);
+    uncallChampion(r, P(0), b[0]); // 角落一取消，兩條都斷
+    evaluateBingo(r);
+    expect(linesOf(r, P(0))).toBe(0);
+    expect(r.bingo).toEqual([]);
+    callChampion(r, P(0), b[0]); // 再喊回來，重新宣告
+    expect(evaluateBingo(r)).toHaveLength(1);
+  });
+
+  it('多張加總才判定 BINGO', () => {
+    const r = roomWith('A');
+    const a = generateBoard(rand);
+    const b = generateBoard(rand);
+    r.boards[P(0)] = [a, b];
+    r.players[P(0)].boardCount = 2;
+    r.target = 2;
+    for (const i of [0, 1, 2, 3, 4]) callChampion(r, P(0), a[i]);
+    evaluateBingo(r);
+    const one = linesOf(r, P(0));
+    for (const i of [4, 8, 12, 16, 20]) callChampion(r, P(0), b[i]);
+    evaluateBingo(r);
+    expect(linesOf(r, P(0))).toBeGreaterThanOrEqual(one + 1);
+    expect(r.bingo).toContain(P(0));
+  });
+
+  it('免費格設定影響判定', () => {
+    const r = roomWith('A');
+    const b = generateBoard(rand);
+    r.boards[P(0)] = [b];
+    r.target = 1;
+    for (const i of [10, 11, 13, 14]) callChampion(r, P(0), b[i]);
+    expect(evaluateBingo(r)).toHaveLength(0);
+    updateSettings(r, P(0), { freeCenter: true });
+    expect(evaluateBingo(r)).toHaveLength(1);
+  });
+
+  it('只有房主能改設定與開新局', () => {
+    const r = roomWith('A', 'B');
+    expect(() => updateSettings(r, P(1), { target: 5 })).toThrow(/房主/);
+    expect(() => newRound(r, P(1))).toThrow(/房主/);
+    updateSettings(r, P(0), { target: 5 });
+    expect(r.target).toBe(5);
+  });
+
+  it('開新的一局：清空已喊與 BINGO，盤面不變', () => {
+    const r = roomWith('A', 'B');
+    r.target = 1;
+    callLine(r, P(0));
+    evaluateBingo(r);
+    const boards = structuredClone(r.boards);
+    newRound(r, P(0));
+    expect(r.calls).toEqual([]);
+    expect(r.bingo).toEqual([]);
+    expect(r.round).toBe(2);
+    expect(r.boards).toEqual(boards);
+  });
+
+  it('改張數會重抽自己的盤面', () => {
+    const r = roomWith('A', 'B');
+    const other = structuredClone(r.boards[P(1)]);
+    setBoardCount(r, P(0), 6, rand);
+    expect(r.boards[P(0)]).toHaveLength(6);
+    expect(r.players[P(0)].boardCount).toBe(6);
+    expect(r.boards[P(1)]).toEqual(other);
+  });
+});
+
+describe('房主交接與在線', () => {
+  it('房主在線不換', () => {
+    const r = roomWith('A', 'B');
+    const t = T0 + 10 * 60_000;
+    const pres = presenceFromSeen({ [seenField(P(0), 's1')]: t - 1000, [seenField(P(1), 's2')]: t - 1000 }, t);
+    expect(transferHostIfNeeded(r, pres, t)).toBe(false);
+  });
+
+  it('房主離線未滿 60 秒不換、超過就換給下一位在線玩家', () => {
+    const r = roomWith('A', 'B', 'C');
+    const left = T0 + 5 * 60_000;
+    const seen = {
+      [seenField(P(0), 'last')]: left,
+      [seenField(P(2), 's3')]: left + 50_000,
+    };
+    const t1 = left + HOST_GRACE_MS - 1000;
+    expect(transferHostIfNeeded(r, presenceFromSeen(seen, t1), t1)).toBe(false);
+    const t2 = left + HOST_GRACE_MS + 1000;
+    seen[seenField(P(2), 's3')] = t2 - 1000;
+    expect(transferHostIfNeeded(r, presenceFromSeen(seen, t2), t2)).toBe(true);
+    expect(r.hostId).toBe(P(2)); // B 不在線，跳過
+  });
+
+  it('沒有人在線就不換', () => {
+    const r = roomWith('A', 'B');
+    const t = T0 + 60 * 60_000;
+    expect(transferHostIfNeeded(r, presenceFromSeen({}, t), t)).toBe(false);
+    expect(r.hostId).toBe(P(0));
+  });
+
+  it('心跳超過 45 秒視為離線', () => {
+    const t = T0 + 100_000;
+    const pres = presenceFromSeen({ [seenField(P(0), 's')]: t - 46_000, [seenField(P(1), 's')]: t - 10_000 }, t);
+    expect(pres.online.has(P(0))).toBe(false);
+    expect(pres.online.has(P(1))).toBe(true);
+  });
+
+  it('房主主動離開：立刻交給下一位；最後一人離開房間就空了', () => {
+    const r = roomWith('A', 'B');
+    expect(removePlayer(r, P(0)).empty).toBe(false);
+    expect(r.hostId).toBe(P(1));
+    expect(r.boards[P(0)]).toBeUndefined();
+    expect(removePlayer(r, P(1)).empty).toBe(true);
+  });
+
+  it('公開狀態含條數、BINGO、在線、房主', () => {
+    const r = roomWith('A', 'B');
+    r.target = 1;
+    callLine(r, P(1));
+    evaluateBingo(r);
+    const t = T0 + 1000;
+    const s = toPublicState(r, presenceFromSeen({ [seenField(P(1), 'x')]: t }, t));
+    const a = s.players.find((p) => p.id === P(0))!;
+    const b = s.players.find((p) => p.id === P(1))!;
+    expect(a).toMatchObject({ isHost: true, online: false, boardCount: 4 });
+    expect(b).toMatchObject({ isHost: false, online: true, bingo: true });
+    expect(b.lines).toBeGreaterThanOrEqual(1);
+    expect(s.calls).toHaveLength(5);
+    expect(JSON.stringify(s)).not.toContain('secretHash');
+  });
+});

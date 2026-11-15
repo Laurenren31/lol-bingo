@@ -1,0 +1,18 @@
+{
+  // 伺服器端（api/、server/、shared/、scripts/）。
+  // 以 CommonJS 編譯，讓 Vercel 的 Node 執行環境與 tsx 都能直接載入，不需要 .js 副檔名。
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "node10",
+    "lib": ["ES2023"],
+    "types": ["node"],
+    "strict": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true
+  },
+  "include": ["api/**/*.ts", "server/**/*.ts", "shared/**/*.ts", "shared/**/*.json", "scripts/**/*.ts", "tests/**/*.ts"]
+}
