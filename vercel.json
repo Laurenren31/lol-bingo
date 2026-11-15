@@ -7,8 +7,5 @@
     "api/socket-io.ts": {
       "maxDuration": 300
     }
-  },
-  "rewrites": [
-    { "source": "/api/socket-io/:path*", "destination": "/api/socket-io" }
-  ]
+  }
 }

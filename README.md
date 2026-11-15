@@ -87,8 +87,8 @@ vercel --prod          # 部署 Production
 - `vercel.json` 已經設定好：
   - 框架：Vite
   - 函式 `api/socket-io.ts` 的 `maxDuration: 300`（免費方案的上限）
-  - 把 `/api/socket-io/*` 改寫到這支函式
-- 前端連線路徑是 `/api/socket-io/socket.io`，只使用 `websocket` transport（Vercel 不支援 long-polling 長連線）。
+- 前端直接連 `/api/socket-io`（`addTrailingSlash: false`），只使用 `websocket` transport（Vercel 不支援 long-polling 長連線）。
+  - 注意：Vercel 的 rewrites 不會套用到 WebSocket upgrade，所以不能用 `/api/socket-io/socket.io` 這類子路徑，會得到 404。
 - 需要開啟 **Fluid Compute**。2025-04-23 之後建立的專案預設已開；舊專案請到 Settings → Functions 打開後重新部署。
 
 ### 免費方案的連線行為

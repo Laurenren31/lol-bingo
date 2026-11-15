@@ -24,7 +24,7 @@ afterAll(async () => {
 });
 
 async function connect(): Promise<C> {
-  const c: C = ioc(url, { path: SOCKET_PATH, transports: ['websocket'], forceNew: true });
+  const c: C = ioc(url, { path: SOCKET_PATH, addTrailingSlash: false, transports: ['websocket'], forceNew: true });
   clients.push(c);
   await new Promise<void>((res, rej) => {
     c.once('connect', () => res());

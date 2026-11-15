@@ -1,8 +1,12 @@
 // 前後端共用的事件名稱與資料格式
 import type { Board, BoardCount } from './board';
 
-/** 前端連線路徑（Vercel 函式 api/socket-io.ts + Socket.IO 預設的 /socket.io） */
-export const SOCKET_PATH = '/api/socket-io/socket.io';
+/**
+ * 前端連線路徑：直接打 Vercel 函式 api/socket-io.ts 本身。
+ * （Vercel 的 rewrites 不會套用到 WebSocket upgrade，所以不能用 /api/socket-io/socket.io 這種子路徑）
+ * 伺服器端會把它轉成 Socket.IO 預設的 /socket.io/。客戶端需搭配 addTrailingSlash: false。
+ */
+export const SOCKET_PATH = '/api/socket-io';
 
 export const MAX_PLAYERS = 20;
 

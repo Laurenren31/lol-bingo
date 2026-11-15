@@ -95,6 +95,7 @@ function leaveLocal(message?: string) {
 
 const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io({
   path: SOCKET_PATH,
+  addTrailingSlash: false,
   transports: ['websocket'], // Vercel 上必須只用 WebSocket
   reconnection: true,
   reconnectionDelay: 500,
