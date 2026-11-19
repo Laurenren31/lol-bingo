@@ -5,6 +5,7 @@ import { game } from '../game';
 const players = computed(() => game.state?.players ?? []);
 const target = computed(() => game.state?.settings.target ?? 0);
 const myId = computed(() => game.session?.playerId);
+const items = computed(() => !!game.state?.settings.items);
 </script>
 
 <template>
@@ -19,7 +20,9 @@ const myId = computed(() => game.session?.playerId);
         <span class="nick">
           <span v-if="p.isHost" class="crown" title="房主">👑</span>{{ p.nick }}<span v-if="p.id === myId" class="you">（你）</span>
         </span>
-        <span class="meta">{{ p.boardCount }} 張</span>
+        <span v-if="items" class="meta" title="這一局還沒用的道具">
+          <span :class="{ gone: !p.hasBomb }">💣</span><span :class="{ gone: !p.hasRecall }">↩️</span>
+        </span>
         <span class="lines"><b>{{ p.lines }}</b> 條</span>
         <span v-if="p.bingo" class="badge">BINGO</span>
         <span v-else-if="!p.online" class="offtext">離線</span>
@@ -91,6 +94,10 @@ const myId = computed(() => game.session?.playerId);
 .meta {
   color: var(--muted);
   font-size: 12px;
+}
+.gone {
+  opacity: 0.2;
+  filter: grayscale(1);
 }
 .lines b {
   color: var(--gold);

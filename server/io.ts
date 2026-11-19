@@ -2,11 +2,12 @@ import http from 'node:http';
 import { createHash, randomBytes, randomInt, timingSafeEqual } from 'node:crypto';
 import { Server, type Socket } from 'socket.io';
 import { isChampion } from '../shared/champions';
-import { isBoardCount, type RandInt } from '../shared/board';
+import { isBoardCount, isCellIndex, type RandInt } from '../shared/board';
 import {
   MAX_PLAYERS,
   type Ack,
   type BingoAnnounce,
+  type ChatMessage,
   type ClientToServerEvents,
   type ErrorCode,
   type Failure,
@@ -18,6 +19,7 @@ import {
   isPlayerId,
   isSecret,
   isTarget,
+  normalizeChat,
   normalizeNickname,
   normalizeRoomCode,
 } from '../shared/validate';
@@ -27,6 +29,7 @@ import {
   addPlayer,
   callChampion,
   evaluateBingo,
+  marksOf,
   newRoom,
   newRound,
   presenceFromSeen,
@@ -35,9 +38,11 @@ import {
   setBoardCount,
   toPublicState,
   transferHostIfNeeded,
-  uncallChampion,
   updateSettings,
+  useBomb,
+  useRecall,
   type RoomData,
+  type SettingsPatch,
 } from './game';
 import { createRateLimiter } from './rateLimit';
 import type { Store } from './store/types';
@@ -141,6 +146,21 @@ export function createGameServer(opts: GameServerOptions) {
     for (const a of list) io.to(code).emit('bingo:announce', a);
   }
 
+  /** 把盤面與炸彈標記傳給指定玩家（不指定就是房內所有人，各自只收到自己的） */
+  function sendBoards(room: RoomData, pids: string[] = Object.keys(room.players)) {
+    for (const pid of pids) {
+      io.to(playerRoom(room.code, pid)).emit('me:boards', { boards: room.boards[pid] ?? [], marks: marksOf(room, pid) });
+    }
+  }
+
+  async function postChat(code: string, msg: Omit<ChatMessage, 'id' | 'ts'>) {
+    const full: ChatMessage = { ...msg, id: randomBytes(6).toString('hex'), ts: now() };
+    await store.pushChat(code, full);
+    io.to(code).emit('chat:message', full);
+  }
+  const systemChat = (code: string, text: string, notify = true) =>
+    postChat(code, { kind: 'system', playerId: '', nick: '', text, notify });
+
   async function publicStateOf(room: RoomData) {
     return toPublicState(room, presenceFromSeen(await store.getSeen(room.code), now()));
   }
@@ -201,6 +221,8 @@ export function createGameServer(opts: GameServerOptions) {
       secret,
       state: await publicStateOf(room),
       boards: room.boards[pid] ?? [],
+      marks: marksOf(room, pid),
+      chat: await store.getChat(room.code),
     };
   }
 
@@ -240,14 +262,15 @@ export function createGameServer(opts: GameServerOptions) {
       const { room, result } = await mutate(code, (r) => {
         if (reuse && r.players[reuse.pid] && secretMatches(reuse.secret, r.players[reuse.pid].secretHash)) {
           r.players[reuse.pid].nick = nick;
-          return { ...reuse, announces: [] as BingoAnnounce[] };
+          return { ...reuse, isNew: false, announces: [] as BingoAnnounce[] };
         }
         if (Object.keys(r.players).length >= MAX_PLAYERS) throw new GameError('ROOM_FULL', `房間已滿（最多 ${MAX_PLAYERS} 人）`);
         const pid = newPlayerId();
         const secret = newSecret();
         addPlayer(r, pid, nick, sha256(secret), now(), rand);
-        return { pid, secret, announces: evaluateBingo(r) };
+        return { pid, secret, isNew: true, announces: evaluateBingo(r) };
       });
+      if (result.isNew) await systemChat(code, `${nick} 加入了房間`, false);
       const ack = await joinResult(socket, room, result.pid, result.secret);
       announce(code, result.announces);
       if (!(await checkHost(code))) await broadcast(code, room);
@@ -270,25 +293,32 @@ export function createGameServer(opts: GameServerOptions) {
       const { code, pid } = member(socket);
       const presence = presenceFromSeen(await store.getSeen(code), now());
       presence.online.delete(pid);
-      const res = await store.update(code, (r) => removePlayer(r, pid, presence));
+      const res = await store.update(code, (r) => ({ nick: r.players[pid]?.nick, ...removePlayer(r, pid, presence) }));
       // 同一位玩家的其他分頁也一起踢出
       io.in(playerRoom(code, pid)).socketsLeave([code, playerRoom(code, pid)]);
       await detach(socket, true);
       if (res?.result.empty) await store.delete(code);
-      else if (res) await broadcast(code, res.room);
+      else if (res) {
+        await broadcast(code, res.room);
+        if (res.result.nick) await systemChat(code, `${res.result.nick} 離開了房間`, false);
+      }
       return { ok: true };
     });
 
     on('boards:setCount', async (p) => {
       const { code, pid } = member(socket);
       if (!isBoardCount(p.count)) bad('張數只能是 1、2、4 或 6');
+      const count = p.count;
       const { room, result } = await mutate(code, (r) => {
-        setBoardCount(r, pid, p.count as 1 | 2 | 4 | 6, rand);
-        return evaluateBingo(r);
+        const changed = setBoardCount(r, pid, count, rand);
+        return { changed, announces: changed ? evaluateBingo(r) : [] };
       });
-      io.to(playerRoom(code, pid)).emit('me:boards', { boards: room.boards[pid] });
-      announce(code, result);
-      await broadcast(code, room);
+      if (result.changed) {
+        sendBoards(room);
+        announce(code, result.announces);
+        await broadcast(code, room);
+        await systemChat(code, `房主把張數改成 ${count} 張，所有人的盤面已重抽`);
+      }
       return { ok: true };
     });
 
@@ -307,22 +337,40 @@ export function createGameServer(opts: GameServerOptions) {
       return { ok: true, changed: result.changed };
     });
 
-    on('call:remove', async (p) => {
+    on('item:bomb', async (p) => {
+      const { code, pid } = member(socket);
+      if (!Number.isInteger(p.board)) bad('找不到這張盤面');
+      if (!isCellIndex(p.cell)) bad('格子位置不正確');
+      const board = p.board as number;
+      const cell = p.cell as number;
+      const { room, result } = await mutate(code, (r) => {
+        useBomb(r, pid, board, cell);
+        return { nick: r.players[pid].nick, announces: evaluateBingo(r) };
+      });
+      sendBoards(room, [pid]);
+      announce(code, result.announces);
+      await broadcast(code, room);
+      await systemChat(code, `💣 ${result.nick} 在自己的第 ${board + 1} 張盤面丟了炸彈！`);
+      return { ok: true };
+    });
+
+    on('item:recall', async (p) => {
       const { code, pid } = member(socket);
       if (!isChampion(p.champion)) bad('找不到這位英雄');
       const champion = p.champion as string;
       const { room, result } = await mutate(code, (r) => {
-        const changed = uncallChampion(r, pid, champion);
+        const call = useRecall(r, pid, champion);
         evaluateBingo(r);
-        return changed;
+        return { nick: r.players[pid].nick, call };
       });
-      if (result) await broadcast(code, room);
-      return { ok: true, changed: result };
+      await broadcast(code, room);
+      await systemChat(code, `↩️ ${result.nick} 對「${champion}」使用了強制遣返（原本是 ${result.call.byNick} 喊的）`);
+      return { ok: true };
     });
 
     on('settings:update', async (p) => {
       const { code, pid } = member(socket);
-      const patch: { target?: number; freeCenter?: boolean } = {};
+      const patch: SettingsPatch = {};
       if (p.target !== undefined) {
         if (!isTarget(p.target)) bad('條數需為 1–10');
         patch.target = p.target as number;
@@ -331,12 +379,22 @@ export function createGameServer(opts: GameServerOptions) {
         if (typeof p.freeCenter !== 'boolean') bad('免費格設定不正確');
         patch.freeCenter = p.freeCenter;
       }
+      if (p.items !== undefined) {
+        if (typeof p.items !== 'boolean') bad('道具設定不正確');
+        patch.items = p.items;
+      }
       const { room, result } = await mutate(code, (r) => {
-        updateSettings(r, pid, patch);
-        return evaluateBingo(r);
+        const changed = updateSettings(r, pid, patch);
+        return { changed, announces: evaluateBingo(r) };
       });
-      announce(code, result);
+      announce(code, result.announces);
       await broadcast(code, room);
+      const c = result.changed;
+      if (c.items !== undefined) {
+        await systemChat(code, c.items ? '房主開啟了道具：每人每局有 💣 炸彈和 ↩️ 強制遣返各一個' : '房主關閉了道具');
+      }
+      if (c.target !== undefined) await systemChat(code, `房主把 BINGO 條件改成 ${c.target} 條`);
+      if (c.freeCenter !== undefined) await systemChat(code, c.freeCenter ? '房主開啟了中間免費格' : '房主關閉了中間免費格');
       return { ok: true };
     });
 
@@ -345,7 +403,20 @@ export function createGameServer(opts: GameServerOptions) {
       const { room } = await mutate(code, (r) => {
         newRound(r, pid);
       });
+      sendBoards(room);
       await broadcast(code, room);
+      await systemChat(code, `第 ${room.round} 局開始！${room.items ? '道具已補滿' : ''}`, false);
+      return { ok: true };
+    });
+
+    on('chat:send', async (p) => {
+      const { code, pid } = member(socket);
+      const text = normalizeChat(p.text) ?? bad('訊息需為 1–100 個字');
+      const room = await store.get(code);
+      if (!room) throw new GameError('ROOM_NOT_FOUND', '房間不存在或已經過期');
+      const player = room.players[pid];
+      if (!player) throw new GameError('NOT_IN_ROOM', '你已經不在這個房間了');
+      await postChat(code, { kind: 'user', playerId: pid, nick: player.nick, text });
       return { ok: true };
     });
 

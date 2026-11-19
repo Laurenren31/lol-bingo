@@ -6,6 +6,16 @@
 - 即時連線：Socket.IO，跑在 Vercel Functions 的原生 WebSocket 上。
 - 共享狀態：存在 Upstash Redis；跨 instance 廣播用 `@socket.io/redis-adapter`。
 
+## 玩法重點
+
+- 一間房最多 20 人；盤面張數（1／2／4／6）由房主決定，全房一致，改張數時所有人一起重抽。
+- 喊過的英雄不能取消（跟一般賓果一樣）。唯一能拔掉已喊英雄的方法是道具「強制遣返」。
+- **道具**（房主在設定裡開啟）：每人每局各一個，房主開新的一局時補滿。
+  - 💣 炸彈：選自己某張盤面上的一格，以它為中心的 3×3 直接蓋章。只影響自己那張，不會加進已喊清單。
+  - ↩️ 強制遣返：把任何人喊過的一位英雄從已喊清單拔掉，所有人的盤面都會跟著重算。
+  - 房主改張數時，炸彈標記會隨舊盤面消失，所以炸彈退還；強制遣返已經影響全房，不退還。
+- **聊天室**：房內所有人即時對話，保留最近 50 則，重新連線也看得到。道具使用、房主改設定、進出房間也會顯示在聊天室裡。
+
 英雄資料只有一個來源：`shared/champions.json`。它和上一層資料夾的 `champions.json` 是同一份檔案，內容沒有改動。
 
 ---
@@ -60,12 +70,13 @@ npm run dev
 | Key | 型別 | 內容 |
 |---|---|---|
 | `bingo:room:{房號}` | hash | `v`（版本）、`hostId`、`target`、`freeCenter`、`round`、`seq`… |
-| `bingo:room:{房號}:players` | hash | playerId → 暱稱、張數、加入順序、密鑰雜湊 |
+| `bingo:room:{房號}:players` | hash | playerId → 暱稱、張數、加入順序、密鑰雜湊、道具使用紀錄、炸彈標記 |
 | `bingo:room:{房號}:boards` | hash | playerId → 盤面 JSON |
 | `bingo:room:{房號}:calls` | zset | 英雄名（score＝喊叫順序） |
 | `bingo:room:{房號}:callers` | hash | 英雄名 → 誰喊的 |
 | `bingo:room:{房號}:bingo` | hash | 已 BINGO 的玩家 |
 | `bingo:room:{房號}:seen` | hash | 在線心跳時間 |
+| `bingo:room:{房號}:chat` | list | 聊天訊息（最近 50 則） |
 | `bingo:sio*` | pub/sub | Socket.IO 跨 instance 廣播頻道 |
 
 - 每次寫入，所有 key 的 TTL 都會重設為 6 小時，所以 6 小時沒動靜的房間會自動消失。
@@ -106,29 +117,35 @@ vercel --prod          # 部署 Production
 
 | 事件 | 資料 |
 |---|---|
-| `room:create` | `{ nick }` → 回傳 `{ roomCode, playerId, secret, state, boards }` |
+| `room:create` | `{ nick }` → 回傳 `{ roomCode, playerId, secret, state, boards, marks, chat }` |
 | `room:join` | `{ roomCode, nick, playerId?, secret? }` |
 | `room:resume` | `{ roomCode, playerId, secret }` |
 | `room:leave` | `{}` |
-| `boards:setCount` | `{ count: 1 \| 2 \| 4 \| 6 }` |
-| `call:add` / `call:remove` | `{ champion }` |
-| `settings:update` | `{ target?: 1–10, freeCenter?: boolean }`（只有房主能用） |
-| `round:new` | `{}`（只有房主能用） |
+| `boards:setCount` | `{ count: 1 \| 2 \| 4 \| 6 }`（只有房主能用，全房重抽） |
+| `call:add` | `{ champion }` |
+| `item:bomb` | `{ board, cell }`（炸自己第 board 張、以 cell 為中心的 3×3） |
+| `item:recall` | `{ champion }`（強制遣返） |
+| `settings:update` | `{ target?: 1–10, freeCenter?: boolean, items?: boolean }`（只有房主能用） |
+| `round:new` | `{}`（只有房主能用；道具補滿） |
+| `chat:send` | `{ text }`（1–100 字） |
 
 **伺服器 → 玩家**
 
 | 事件 | 資料 |
 |---|---|
-| `room:state` | 全房共用狀態：設定、已喊清單、玩家（條數、BINGO、在線、房主） |
-| `me:boards` | 只傳給自己的盤面 |
+| `room:state` | 全房共用狀態：設定、已喊清單、玩家（條數、BINGO、在線、房主、剩餘道具） |
+| `me:boards` | 只傳給自己的盤面與炸彈標記 |
 | `bingo:announce` | 有人剛達成 BINGO |
+| `chat:message` | 新的聊天或系統訊息 |
 
 ### 伺服器端驗證
 
 - 英雄必須在 champions.json 內。
 - 暱稱 1–12 字，不可含控制字元或零寬字元。
 - 房號必須是 6 碼，只用 `23456789ABCDEFGHJKLMNPQRSTUVWXYZ`。
-- 只有房主能改設定。
+- 只有房主能改設定與張數。
+- 道具要房間有開、而且這一局還沒用過才能用。
+- 聊天訊息 1–100 字，控制字元與零寬字元會被拿掉。
 - 每條連線限制連發 10 次，之後每秒回補 5 次。
 - 一個房間最多 20 人。
 - 盤面、連線數、BINGO 一律由伺服器產生與計算。前端只用同一支函式決定格子要顯示成哪種樣式。

@@ -1,4 +1,5 @@
 import type { RoomData } from '../game';
+import type { ChatMessage } from '../../shared/protocol';
 
 /** 房間 6 小時沒動靜自動刪除 */
 export const ROOM_TTL_SECONDS = 6 * 60 * 60;
@@ -19,4 +20,9 @@ export interface Store {
   /** 刪除 seen 欄位，並可同時寫入其他欄位（例如斷線時間） */
   editSeen(code: string, remove: string[], set?: Record<string, number>): Promise<void>;
   getSeen(code: string): Promise<Record<string, number>>;
+
+  /** 聊天：新增一則並只保留最近 CHAT_HISTORY 則 */
+  pushChat(code: string, msg: ChatMessage): Promise<void>;
+  /** 聊天：由舊到新 */
+  getChat(code: string): Promise<ChatMessage[]>;
 }

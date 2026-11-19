@@ -3,8 +3,10 @@ import { computed, reactive } from 'vue';
 import { io, type Socket } from 'socket.io-client';
 import type { Board, BoardCount } from '../shared/board';
 import {
+  CHAT_HISTORY,
   SOCKET_PATH,
   type Ack,
+  type ChatMessage,
   type ClientToServerEvents,
   type JoinResult,
   type RoomState,
@@ -49,6 +51,8 @@ function loadSession(): Session | null {
 }
 
 export type ConnStatus = 'connecting' | 'connected' | 'reconnecting';
+/** 正在選道具的目標 */
+export type ItemMode = null | 'bomb' | 'recall';
 
 export const game = reactive({
   nick: lsGet(NICK_KEY) ?? '',
@@ -58,6 +62,10 @@ export const game = reactive({
   resuming: false,
   state: null as RoomState | null,
   boards: [] as Board[],
+  /** 自己每張盤面被炸彈標記的格子 */
+  marks: [] as number[][],
+  chat: [] as ChatMessage[],
+  itemMode: null as ItemMode,
   /** 自己剛達成 BINGO 時顯示的大視窗 */
   winLines: 0,
   winOpen: false,
@@ -67,6 +75,7 @@ export const inRoom = computed(() => !!game.session);
 export const me = computed(() => game.state?.players.find((p) => p.id === game.session?.playerId) ?? null);
 export const isHost = computed(() => !!game.state && game.state.hostId === game.session?.playerId);
 export const calledSet = computed(() => new Set(game.state?.calls.map((c) => c.champion) ?? []));
+export const itemsOn = computed(() => !!game.state?.settings.items);
 
 export function saveNick(nick: string) {
   game.nick = nick;
@@ -86,6 +95,9 @@ function leaveLocal(message?: string) {
   setSession(null);
   game.state = null;
   game.boards = [];
+  game.marks = [];
+  game.chat = [];
+  game.itemMode = null;
   game.resuming = false;
   game.winOpen = false;
   if (message) toast(message);
@@ -130,6 +142,8 @@ function applyJoin(r: JoinResult) {
   setSession({ roomCode: r.roomCode, playerId: r.playerId, secret: r.secret });
   game.state = r.state;
   game.boards = r.boards;
+  game.marks = r.marks;
+  game.chat = r.chat;
   game.resuming = false;
 }
 
@@ -169,13 +183,25 @@ socket.on('room:state', (s) => {
   }
   if (game.state && s.round > game.state.round) {
     game.winOpen = false;
+    game.itemMode = null;
     toast('新的一局開始了！已喊清單已清空', { gold: true });
   }
   game.state = s;
+  // 道具被關掉或已經用掉，就離開選目標模式
+  const mine = s.players.find((p) => p.id === game.session!.playerId);
+  if ((game.itemMode === 'bomb' && !mine?.hasBomb) || (game.itemMode === 'recall' && !mine?.hasRecall)) game.itemMode = null;
 });
 
-socket.on('me:boards', ({ boards }) => {
+socket.on('me:boards', ({ boards, marks }) => {
   game.boards = boards;
+  game.marks = marks;
+});
+
+socket.on('chat:message', (m) => {
+  if (!game.session || game.chat.some((x) => x.id === m.id)) return;
+  game.chat.push(m);
+  if (game.chat.length > CHAT_HISTORY) game.chat.splice(0, game.chat.length - CHAT_HISTORY);
+  if (m.kind === 'system' && m.notify) toast(m.text, { ms: 3500 });
 });
 
 socket.on('bingo:announce', (a) => {
@@ -223,9 +249,19 @@ export async function callChampion(champion: string) {
   if (handleFailure(r) && r.ok && !r.changed) toast(`「${champion}」已經喊過了`);
 }
 
-export async function uncallChampion(champion: string) {
-  const r = await request('call:remove', { champion });
-  handleFailure(r);
+export async function useBomb(board: number, cell: number) {
+  const r = await request('item:bomb', { board, cell });
+  if (handleFailure(r)) game.itemMode = null;
+}
+
+export async function useRecall(champion: string) {
+  const r = await request('item:recall', { champion });
+  if (handleFailure(r)) game.itemMode = null;
+}
+
+export async function sendChat(text: string): Promise<boolean> {
+  const r = await request('chat:send', { text });
+  return handleFailure(r);
 }
 
 export async function setBoardCount(count: BoardCount) {
@@ -233,7 +269,7 @@ export async function setBoardCount(count: BoardCount) {
   handleFailure(r);
 }
 
-export async function updateSettings(patch: { target?: number; freeCenter?: boolean }) {
+export async function updateSettings(patch: { target?: number; freeCenter?: boolean; items?: boolean }) {
   const r = await request('settings:update', patch);
   handleFailure(r);
 }

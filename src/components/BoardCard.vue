@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { CENTER, evaluateBoard, type Board } from '../../shared/board';
+import { computed, ref } from 'vue';
+import { CENTER, bombArea, evaluateBoard, type Board } from '../../shared/board';
 import { COLUMN_NAMES, getChampion } from '../../shared/champions';
 
 const props = defineProps<{
@@ -8,13 +8,24 @@ const props = defineProps<{
   index: number;
   called: ReadonlySet<string>;
   freeCenter: boolean;
+  /** 被炸彈標記的格子 */
+  marks?: number[];
+  /** 正在選炸彈落點 */
+  aiming?: boolean;
+  /** 正在選要遣返的英雄 */
+  recalling?: boolean;
   large?: boolean;
 }>();
-const emit = defineEmits<{ cell: [name: string] }>();
+const emit = defineEmits<{ cell: [cell: number, name: string] }>();
 
 // 只用來決定顯示樣式；合計條數與 BINGO 以伺服器為準
-const result = computed(() => evaluateBoard(props.board, props.called, props.freeCenter));
+const result = computed(() => evaluateBoard(props.board, props.called, props.freeCenter, props.marks));
 const winSet = computed(() => new Set(result.value.winCells));
+const bombed = computed(() => new Set(props.marks ?? []));
+
+// 選炸彈落點時，滑鼠移到哪格就預覽那格的 3×3
+const hover = ref<number | null>(null);
+const aimSet = computed(() => new Set(props.aiming && hover.value !== null ? bombArea(hover.value) : []));
 
 const cells = computed(() =>
   props.board.map((name, i) => {
@@ -25,6 +36,9 @@ const cells = computed(() =>
       slug: getChampion(name)?.slug ?? '',
       hit: result.value.marked[i],
       win: winSet.value.has(i),
+      bomb: bombed.value.has(i) && !props.called.has(name),
+      aim: aimSet.value.has(i),
+      target: props.recalling && props.called.has(name),
     };
   }),
 );
@@ -35,9 +49,9 @@ function hideImg(e: Event) {
 </script>
 
 <template>
-  <div class="board" :class="{ won: result.lines > 0, large }">
+  <div class="board" :class="{ won: result.lines > 0, large, aiming }" @mouseleave="hover = null">
     <div class="bhead">
-      <span>第 {{ index + 1 }} 張</span>
+      <span>第 {{ index + 1 }} 張<span v-if="bombed.size" class="boom" title="這張用過炸彈">💣</span></span>
       <span><b>{{ result.lines }}</b> 條</span>
     </div>
     <div class="grid">
@@ -47,11 +61,12 @@ function hideImg(e: Event) {
         :key="i"
         type="button"
         class="cell"
-        :class="{ hit: c.hit, win: c.win, free: c.free }"
-        :disabled="c.free"
+        :class="{ hit: c.hit, win: c.win, free: c.free, bomb: c.bomb, aim: c.aim, target: c.target }"
+        :disabled="c.free && !aiming"
         :aria-pressed="c.hit"
-        :aria-label="c.free ? '免費格' : c.name + (c.hit ? '（已蓋章）' : '')"
-        @click="!c.free && emit('cell', c.name)"
+        :aria-label="c.free ? '免費格' : c.name + (c.bomb ? '（炸彈蓋章）' : c.hit ? '（已蓋章）' : '')"
+        @mouseenter="hover = i"
+        @click="(!c.free || aiming) && emit('cell', i, c.name)"
       >
         <img v-if="!c.free && c.slug" :src="`/champions/${c.slug}.webp`" alt="" loading="lazy" decoding="async" @error="hideImg" />
         <span class="name">{{ c.free ? '★免費★' : c.name }}</span>
@@ -203,6 +218,44 @@ function hideImg(e: Event) {
 }
 .cell.free.win {
   background: linear-gradient(145deg, #a8894f, #785a28);
+}
+/* 炸彈蓋的章：橘色 */
+.cell.bomb:not(.win) {
+  border-color: #e8935c;
+}
+.cell.bomb::after {
+  border-color: rgba(240, 140, 70, 0.95);
+  background: radial-gradient(circle, rgba(240, 140, 70, 0.25), transparent 70%);
+  box-shadow: 0 0 6px rgba(240, 140, 70, 0.6);
+}
+.boom {
+  margin-left: 4px;
+}
+
+/* 選炸彈落點：整張盤面外框變橘色，滑過的 3×3 亮起來 */
+.board.aiming {
+  border-color: #e8935c;
+  box-shadow: 0 0 14px rgba(232, 147, 92, 0.35);
+}
+.board.aiming .cell {
+  cursor: crosshair;
+}
+.cell.aim {
+  border: 2px solid #ffb27a;
+  box-shadow: inset 0 0 0 999px rgba(255, 140, 60, 0.28);
+}
+.cell.aim img {
+  filter: brightness(0.8);
+}
+/* 選遣返目標：已喊的格子閃一下提示可以點 */
+.cell.target {
+  border: 2px solid var(--danger);
+  animation: pulse 1.1s ease-in-out infinite;
+}
+@keyframes pulse {
+  50% {
+    box-shadow: 0 0 10px rgba(232, 115, 92, 0.8);
+  }
 }
 .cell:focus-visible {
   outline: 2px solid var(--gold2);

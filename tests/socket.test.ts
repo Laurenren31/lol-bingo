@@ -4,7 +4,7 @@ import type { AddressInfo } from 'node:net';
 import { io as ioc, type Socket } from 'socket.io-client';
 import { createGameServer } from '../server/io';
 import { MemoryStore } from '../server/store/memory';
-import { SOCKET_PATH, type ClientToServerEvents, type JoinResult, type RoomState, type ServerToClientEvents } from '../shared/protocol';
+import { SOCKET_PATH, type ChatMessage, type ClientToServerEvents, type JoinResult, type RoomState, type ServerToClientEvents } from '../shared/protocol';
 
 type C = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -32,6 +32,9 @@ async function connect(): Promise<C> {
   });
   return c;
 }
+
+/** 每條連線有頻率限制（連發 10 次、每秒回補 5 次），連續好幾個測試之間先讓它回補 */
+const rest = () => new Promise((r) => setTimeout(r, 2100));
 
 function nextState(c: C, pred: (s: RoomState) => boolean = () => true) {
   return new Promise<RoomState>((res) => {
@@ -105,19 +108,67 @@ describe('Socket.IO 流程', () => {
     expect((await ann).nick).toBe('小B');
   });
 
-  it('取消喊叫後重算', async () => {
+  it('沒開道具不能遣返；房主開道具後，強制遣返會重算並發系統訊息', async () => {
+    const champ = joinB.boards[0][2];
+    expect(await b.emitWithAck('item:recall', { champion: champ })).toMatchObject({ ok: false, code: 'BAD_INPUT' });
+    expect(await b.emitWithAck('settings:update', { items: true })).toMatchObject({ ok: false, code: 'NOT_HOST' });
+    const on = nextState(b, (s) => s.settings.items);
+    expect(await a.emitWithAck('settings:update', { items: true })).toMatchObject({ ok: true });
+    expect((await on).players.every((p) => p.hasBomb && p.hasRecall)).toBe(true);
+
     const st = nextState(b, (s) => s.calls.length === 4);
-    expect(await b.emitWithAck('call:remove', { champion: joinB.boards[0][2] })).toMatchObject({ ok: true, changed: true });
+    const msg = new Promise<ChatMessage>((res) => a.once('chat:message', res));
+    expect(await b.emitWithAck('item:recall', { champion: champ })).toMatchObject({ ok: true });
     const s = await st;
     const me = s.players.find((p) => p.id === joinB.playerId)!;
     expect(me.lines).toBe(0);
     expect(me.bingo).toBe(false);
+    expect(me.hasRecall).toBe(false);
+    expect((await msg).text).toContain('強制遣返');
+    expect(await b.emitWithAck('item:recall', { champion: joinB.boards[0][0] })).toMatchObject({ ok: false });
   });
 
-  it('改張數：收到新盤面', async () => {
-    const boards = new Promise<{ boards: string[][] }>((res) => b.once('me:boards', res));
-    expect(await b.emitWithAck('boards:setCount', { count: 6 })).toMatchObject({ ok: true });
-    expect((await boards).boards).toHaveLength(6);
+  it('炸彈：只更新自己的盤面標記', async () => {
+    await rest();
+    const mine = new Promise<{ marks: number[][] }>((res) => b.once('me:boards', res));
+    let aGotBoards = false;
+    a.once('me:boards', () => (aGotBoards = true));
+    const st = nextState(a, (s) => !s.players.find((p) => p.id === joinB.playerId)!.hasBomb);
+    expect(await b.emitWithAck('item:bomb', { board: 0, cell: 12 })).toMatchObject({ ok: true });
+    expect((await mine).marks[0]).toEqual([6, 7, 8, 11, 12, 13, 16, 17, 18]);
+    await st;
+    expect(aGotBoards).toBe(false);
+  });
+
+  it('改張數：只有房主能改，全房都收到新盤面', async () => {
+    expect(await b.emitWithAck('boards:setCount', { count: 6 })).toMatchObject({ ok: false, code: 'NOT_HOST' });
+    const boardsA = new Promise<{ boards: string[][] }>((res) => a.once('me:boards', res));
+    const boardsB = new Promise<{ boards: string[][]; marks: number[][] }>((res) => b.once('me:boards', res));
+    expect(await a.emitWithAck('boards:setCount', { count: 6 })).toMatchObject({ ok: true });
+    expect((await boardsA).boards).toHaveLength(6);
+    const nb = await boardsB;
+    expect(nb.boards).toHaveLength(6);
+    expect(nb.marks.flat()).toEqual([]);
+  });
+
+  it('聊天：全房收到，重新進房拿得到歷史', async () => {
+    await rest();
+    const got = new Promise<ChatMessage>((res) => {
+      const h = (m: ChatMessage) => {
+        if (m.kind === 'user') {
+          a.off('chat:message', h);
+          res(m);
+        }
+      };
+      a.on('chat:message', h);
+    });
+    expect(await b.emitWithAck('chat:send', { text: '  大家好  ' })).toMatchObject({ ok: true });
+    expect(await b.emitWithAck('chat:send', { text: '' })).toMatchObject({ ok: false, code: 'BAD_INPUT' });
+    expect(await b.emitWithAck('chat:send', { text: 'x'.repeat(101) })).toMatchObject({ ok: false, code: 'BAD_INPUT' });
+    const m = await got;
+    expect(m).toMatchObject({ nick: '小B', text: '大家好', playerId: joinB.playerId });
+    const c = await connect();
+    expect(await c.emitWithAck('chat:send', { text: 'hi' })).toMatchObject({ ok: false, code: 'NOT_IN_ROOM' });
   });
 
   it('斷線重連：用 playerId + secret 回到原房間', async () => {
@@ -132,15 +183,19 @@ describe('Socket.IO 流程', () => {
     if (!r.ok) return;
     expect(r.boards).toHaveLength(6);
     expect(r.state.calls).toHaveLength(4);
+    expect(r.chat.some((m) => m.kind === 'user' && m.text === '大家好')).toBe(true);
+    expect(r.chat.some((m) => m.kind === 'system' && m.text.includes('小B 加入'))).toBe(true);
     b = b2;
   });
 
-  it('開新的一局（房主）', async () => {
+  it('開新的一局（房主）：道具補滿', async () => {
+    await rest();
     const st = nextState(b, (s) => s.round === 2);
     expect(await a.emitWithAck('round:new', {})).toMatchObject({ ok: true });
     const s = await st;
     expect(s.calls).toEqual([]);
     expect(s.players.every((p) => !p.bingo)).toBe(true);
+    expect(s.players.every((p) => p.hasBomb && p.hasRecall)).toBe(true);
   });
 
   it('頻率限制', async () => {

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import RedisMock from 'ioredis-mock';
 import type Redis from 'ioredis';
 import { RedisStore, roomKeys } from '../server/store/redis';
-import { addPlayer, callChampion, evaluateBingo, newRoom, newRound } from '../server/game';
+import { addPlayer, callChampion, evaluateBingo, newRoom, newRound, setBoardCount, useBomb } from '../server/game';
 
 const rand = (n: number) => Math.floor(Math.random() * n);
 const A = 'aaaaaaaaaaaa';
@@ -46,6 +46,34 @@ describe('RedisStore', () => {
     expect(r.calls.map((c) => c.seq)).toEqual([1, 2, 3, 4, 5]);
     expect(r.calls[0].byNick).toBe('小A');
     expect(r.bingo).toContain(B);
+  });
+
+  it('道具設定、張數、炸彈標記都能存回', async () => {
+    const { store } = await setup('RDS23A');
+    await store.update('RDS23A', (r) => {
+      r.items = true;
+      setBoardCount(r, A, 2, rand);
+      useBomb(r, B, 1, 0);
+    });
+    const r = (await store.get('RDS23A'))!;
+    expect(r.items).toBe(true);
+    expect(r.boardCount).toBe(2);
+    expect(r.boards[B]).toHaveLength(2);
+    expect(r.players[B]).toMatchObject({ bombUsed: true, marks: [[], [0, 1, 5, 6]] });
+  });
+
+  it('聊天：只留最近 50 則，刪房一起刪', async () => {
+    const { redis, store } = await setup('RDS23B');
+    for (let i = 0; i < 55; i++) {
+      await store.pushChat('RDS23B', { id: String(i), kind: 'user', playerId: A, nick: '小A', text: '訊息' + i, ts: i });
+    }
+    const chat = await store.getChat('RDS23B');
+    expect(chat).toHaveLength(50);
+    expect(chat[0].text).toBe('訊息5');
+    expect(chat.at(-1)!.text).toBe('訊息54');
+    expect(await redis.ttl(roomKeys('RDS23B').chat)).toBeGreaterThan(0);
+    await store.delete('RDS23B');
+    expect(await store.getChat('RDS23B')).toEqual([]);
   });
 
   it('同時更新不會互相蓋掉（樂觀鎖重試）', async () => {

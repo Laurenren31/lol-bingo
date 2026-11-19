@@ -68,12 +68,42 @@ export interface BoardResult {
   winCells: number[];
 }
 
-export function isMarked(board: Board, i: number, called: ReadonlySet<string>, freeCenter: boolean): boolean {
-  return (freeCenter && i === CENTER) || called.has(board[i]);
+/** 炸彈範圍：以 center 為中心的 3×3（超出盤面的部分不算） */
+export function bombArea(center: number): number[] {
+  const r0 = Math.floor(center / SIZE);
+  const c0 = center % SIZE;
+  const out: number[] = [];
+  for (let r = r0 - 1; r <= r0 + 1; r++) {
+    for (let c = c0 - 1; c <= c0 + 1; c++) {
+      if (r >= 0 && r < SIZE && c >= 0 && c < SIZE) out.push(r * SIZE + c);
+    }
+  }
+  return out;
 }
 
-export function evaluateBoard(board: Board, called: ReadonlySet<string>, freeCenter: boolean): BoardResult {
-  const marked = board.map((_, i) => isMarked(board, i, called, freeCenter));
+export function isCellIndex(v: unknown): v is number {
+  return Number.isInteger(v) && (v as number) >= 0 && (v as number) < CELLS;
+}
+
+/** extra：這張盤面上被炸彈標記的格子 */
+export function isMarked(
+  board: Board,
+  i: number,
+  called: ReadonlySet<string>,
+  freeCenter: boolean,
+  extra?: ReadonlySet<number>,
+): boolean {
+  return (freeCenter && i === CENTER) || called.has(board[i]) || !!extra?.has(i);
+}
+
+export function evaluateBoard(
+  board: Board,
+  called: ReadonlySet<string>,
+  freeCenter: boolean,
+  extra?: readonly number[],
+): BoardResult {
+  const ex = extra?.length ? new Set(extra) : undefined;
+  const marked = board.map((_, i) => isMarked(board, i, called, freeCenter, ex));
   const win = new Set<number>();
   let lines = 0;
   for (const line of LINES) {
@@ -85,7 +115,12 @@ export function evaluateBoard(board: Board, called: ReadonlySet<string>, freeCen
   return { lines, marked, winCells: [...win].sort((a, b) => a - b) };
 }
 
-/** 多張盤面的連線數加總 */
-export function totalLines(boards: readonly Board[], called: ReadonlySet<string>, freeCenter: boolean): number {
-  return boards.reduce((sum, b) => sum + evaluateBoard(b, called, freeCenter).lines, 0);
+/** 多張盤面的連線數加總；marks[i] 是第 i 張被炸彈標記的格子 */
+export function totalLines(
+  boards: readonly Board[],
+  called: ReadonlySet<string>,
+  freeCenter: boolean,
+  marks?: readonly (readonly number[] | undefined)[],
+): number {
+  return boards.reduce((sum, b, i) => sum + evaluateBoard(b, called, freeCenter, marks?.[i]).lines, 0);
 }

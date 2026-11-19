@@ -14,12 +14,13 @@ import {
   setBoardCount,
   toPublicState,
   transferHostIfNeeded,
-  uncallChampion,
   updateSettings,
+  useBomb,
+  useRecall,
   type RoomData,
 } from '../server/game';
-import { generateBoard, isValidBoard } from '../shared/board';
-import { ROOM_CODE_ALPHABET, generateRoomCode, normalizeNickname, normalizeRoomCode } from '../shared/validate';
+import { bombArea, generateBoard, isValidBoard } from '../shared/board';
+import { ROOM_CODE_ALPHABET, generateRoomCode, normalizeChat, normalizeNickname, normalizeRoomCode } from '../shared/validate';
 
 const rand = (n: number) => Math.floor(Math.random() * n);
 const T0 = 1_000_000;
@@ -30,6 +31,13 @@ function roomWith(...nicks: string[]): RoomData {
   return r;
 }
 const P = (i: number) => `p${i}aaaaaaaa`;
+
+/** 只保留某位玩家、不含炸彈標記的複本，用來比較條數 */
+function roomWithBoards(r: RoomData, pid: string): RoomData {
+  const c = structuredClone(r);
+  c.players = { [pid]: { ...c.players[pid], marks: [] } };
+  return c;
+}
 
 function callLine(r: RoomData, pid: string, board = 0, cells = [0, 1, 2, 3, 4]) {
   for (const i of cells) callChampion(r, pid, r.boards[pid][board][i]);
@@ -84,9 +92,10 @@ describe('房間邏輯', () => {
     expect(() => callChampion(r, 'nobody123', '伊瑞莉雅')).toThrow(GameError);
   });
 
-  it('達到條數就 BINGO，只宣告一次；取消喊叫後重算', () => {
+  it('達到條數就 BINGO，只宣告一次；被遣返後重算', () => {
     const r = roomWith('A', 'B');
     r.target = 1;
+    r.items = true;
     callLine(r, P(0));
     const ann = evaluateBingo(r);
     expect(ann.map((a) => a.playerId)).toContain(P(0));
@@ -95,14 +104,15 @@ describe('房間邏輯', () => {
 
     const before = linesOf(r, P(0));
     expect(before).toBeGreaterThanOrEqual(1);
-    uncallChampion(r, P(1), r.boards[P(0)][0][2]);
+    useRecall(r, P(1), r.boards[P(0)][0][2]);
     evaluateBingo(r);
     expect(linesOf(r, P(0))).toBeLessThan(before);
     if (linesOf(r, P(0)) < 1) expect(r.bingo).not.toContain(P(0));
   });
 
-  it('取消喊叫後重算（固定盤面，結果確定）', () => {
+  it('被遣返後重算（固定盤面，結果確定）', () => {
     const r = roomWith('A');
+    r.items = true;
     const b = generateBoard(rand);
     r.boards[P(0)] = [b];
     r.target = 2;
@@ -110,7 +120,7 @@ describe('房間邏輯', () => {
     callLine(r, P(0), 0, [5, 10, 15, 20]); // 第 1 直排（0 已喊）
     expect(evaluateBingo(r)).toHaveLength(1);
     expect(linesOf(r, P(0))).toBe(2);
-    uncallChampion(r, P(0), b[0]); // 角落一取消，兩條都斷
+    useRecall(r, P(0), b[0]); // 角落一被拔掉，兩條都斷
     evaluateBingo(r);
     expect(linesOf(r, P(0))).toBe(0);
     expect(r.bingo).toEqual([]);
@@ -166,13 +176,95 @@ describe('房間邏輯', () => {
     expect(r.boards).toEqual(boards);
   });
 
-  it('改張數會重抽自己的盤面', () => {
+  it('改張數：只有房主能改，全房一起重抽，新加入的人也照這個張數', () => {
     const r = roomWith('A', 'B');
-    const other = structuredClone(r.boards[P(1)]);
-    setBoardCount(r, P(0), 6, rand);
+    expect(() => setBoardCount(r, P(1), 6, rand)).toThrow(/房主/);
+    expect(setBoardCount(r, P(0), 4, rand)).toBe(false); // 沒變
+    expect(setBoardCount(r, P(0), 6, rand)).toBe(true);
+    expect(r.boardCount).toBe(6);
     expect(r.boards[P(0)]).toHaveLength(6);
-    expect(r.players[P(0)].boardCount).toBe(6);
-    expect(r.boards[P(1)]).toEqual(other);
+    expect(r.boards[P(1)]).toHaveLength(6);
+    addPlayer(r, P(2), 'C', 'x', T0, rand);
+    expect(r.boards[P(2)]).toHaveLength(6);
+  });
+});
+
+describe('道具', () => {
+  it('沒開道具不能用', () => {
+    const r = roomWith('A');
+    callChampion(r, P(0), r.boards[P(0)][0][0]);
+    expect(() => useBomb(r, P(0), 0, 12)).toThrow(/沒有開啟道具/);
+    expect(() => useRecall(r, P(0), r.boards[P(0)][0][0])).toThrow(/沒有開啟道具/);
+    expect(toPublicState(r, presenceFromSeen({}, T0)).players[0]).toMatchObject({ hasBomb: false, hasRecall: false });
+  });
+
+  it('炸彈範圍：中間 9 格、邊 6 格、角 4 格', () => {
+    expect(bombArea(12)).toEqual([6, 7, 8, 11, 12, 13, 16, 17, 18]);
+    expect(bombArea(2)).toEqual([1, 2, 3, 6, 7, 8]);
+    expect(bombArea(0)).toEqual([0, 1, 5, 6]);
+    expect(bombArea(24)).toEqual([18, 19, 23, 24]);
+  });
+
+  it('炸彈只標記自己的那張盤面，算進條數，一局一次', () => {
+    const r = roomWith('A', 'B');
+    r.items = true;
+    r.boards[P(0)] = [generateBoard(rand), generateBoard(rand)];
+    // 第 2 張：喊第 1 橫排的 0、4，再炸以 7 為中心 → 0–4 全滿＝1 條（另外 1–3、6–8 也被標記）
+    callChampion(r, P(1), r.boards[P(0)][1][0]);
+    callChampion(r, P(1), r.boards[P(0)][1][4]);
+    useBomb(r, P(0), 1, 7);
+    expect(r.players[P(0)].marks).toEqual([[], [1, 2, 3, 6, 7, 8, 11, 12, 13]]);
+    expect(linesOf(r, P(0))).toBeGreaterThanOrEqual(1);
+    expect(r.calls).toHaveLength(2); // 沒加進已喊清單
+    expect(linesOf(r, P(1))).toBe(linesOf(roomWithBoards(r, P(1)), P(1))); // B 不受影響
+    expect(() => useBomb(r, P(0), 0, 12)).toThrow(/已經用掉/);
+    expect(() => useBomb(r, P(1), 9, 12)).toThrow(/找不到這張盤面/);
+    expect(() => useBomb(r, P(1), 0, 25)).toThrow(/格子位置/);
+    const s = toPublicState(r, presenceFromSeen({}, T0));
+    expect(s.players.map((p) => p.hasBomb)).toEqual([false, true]);
+  });
+
+  it('強制遣返：拔掉任何人喊的英雄，一局一次；沒喊過的不能遣返', () => {
+    const r = roomWith('A', 'B');
+    r.items = true;
+    callChampion(r, P(0), '伊瑞莉雅');
+    callChampion(r, P(0), '亞歷斯塔');
+    expect(() => useRecall(r, P(1), '阿璃')).toThrow(/還沒有被喊過/);
+    expect(useRecall(r, P(1), '伊瑞莉雅').byNick).toBe('A');
+    expect(r.calls.map((c) => c.champion)).toEqual(['亞歷斯塔']);
+    expect(() => useRecall(r, P(1), '亞歷斯塔')).toThrow(/已經用掉/);
+    expect(callChampion(r, P(0), '伊瑞莉雅')).toBe(true); // 可以再喊回來
+  });
+
+  it('新的一局道具補滿、炸彈標記清掉；改張數退還炸彈但不退強制遣返', () => {
+    const r = roomWith('A');
+    r.items = true;
+    callChampion(r, P(0), r.boards[P(0)][0][0]);
+    useBomb(r, P(0), 0, 12);
+    useRecall(r, P(0), r.boards[P(0)][0][0]);
+    setBoardCount(r, P(0), 2, rand);
+    expect(r.players[P(0)]).toMatchObject({ bombUsed: false, recallUsed: true, marks: [] });
+    useBomb(r, P(0), 0, 12);
+    newRound(r, P(0));
+    expect(r.players[P(0)]).toMatchObject({ bombUsed: false, recallUsed: false, marks: [] });
+  });
+
+  it('房主開關道具，有變才回報', () => {
+    const r = roomWith('A');
+    expect(updateSettings(r, P(0), { items: true })).toEqual({ items: true });
+    expect(updateSettings(r, P(0), { items: true, target: 3 })).toEqual({});
+  });
+});
+
+describe('聊天', () => {
+  it('1–100 字，換行變空白，拿掉控制字元但保留 emoji', () => {
+    expect(normalizeChat('  嗨\n大家  ')).toBe('嗨 大家');
+    expect(normalizeChat('a\u200Bb\u0007')).toBe('ab');
+    expect(normalizeChat('👨\u200D👩\u200D👧')).toBe('👨\u200D👩\u200D👧');
+    expect(normalizeChat('字'.repeat(100))).not.toBeNull();
+    expect(normalizeChat('字'.repeat(101))).toBeNull();
+    expect(normalizeChat('   ')).toBeNull();
+    expect(normalizeChat(5)).toBeNull();
   });
 });
 
@@ -230,7 +322,8 @@ describe('房主交接與在線', () => {
     const s = toPublicState(r, presenceFromSeen({ [seenField(P(1), 'x')]: t }, t));
     const a = s.players.find((p) => p.id === P(0))!;
     const b = s.players.find((p) => p.id === P(1))!;
-    expect(a).toMatchObject({ isHost: true, online: false, boardCount: 4 });
+    expect(a).toMatchObject({ isHost: true, online: false });
+    expect(s.settings).toMatchObject({ boardCount: 4, items: false });
     expect(b).toMatchObject({ isHost: false, online: true, bingo: true });
     expect(b.lines).toBeGreaterThanOrEqual(1);
     expect(s.calls).toHaveLength(5);

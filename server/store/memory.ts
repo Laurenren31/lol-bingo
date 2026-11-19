@@ -1,5 +1,6 @@
 // 記憶體版 store：本機開發（沒設定 REDIS_URL）與測試用。只適合單一程序。
 import type { RoomData } from '../game';
+import { CHAT_HISTORY, type ChatMessage } from '../../shared/protocol';
 import { ROOM_TTL_SECONDS, type Store } from './types';
 
 interface Entry {
@@ -10,6 +11,7 @@ interface Entry {
 export class MemoryStore implements Store {
   private rooms = new Map<string, Entry>();
   private seen = new Map<string, { data: Record<string, number>; expiresAt: number }>();
+  private chat = new Map<string, { list: ChatMessage[]; expiresAt: number }>();
 
   constructor(
     private now: () => number = Date.now,
@@ -22,6 +24,7 @@ export class MemoryStore implements Store {
     if (e.expiresAt <= this.now()) {
       this.rooms.delete(code);
       this.seen.delete(code);
+      this.chat.delete(code);
       return null;
     }
     return JSON.parse(e.json) as RoomData;
@@ -56,6 +59,21 @@ export class MemoryStore implements Store {
   async delete(code: string) {
     this.rooms.delete(code);
     this.seen.delete(code);
+    this.chat.delete(code);
+  }
+
+  async pushChat(code: string, msg: ChatMessage) {
+    const c = this.chat.get(code);
+    const list = c && c.expiresAt > this.now() ? c.list : [];
+    list.push(msg);
+    if (list.length > CHAT_HISTORY) list.splice(0, list.length - CHAT_HISTORY);
+    this.chat.set(code, { list, expiresAt: this.now() + this.ttlMs });
+  }
+
+  async getChat(code: string) {
+    const c = this.chat.get(code);
+    if (!c || c.expiresAt <= this.now()) return [];
+    return c.list.map((m) => ({ ...m }));
   }
 
   private seenOf(code: string) {

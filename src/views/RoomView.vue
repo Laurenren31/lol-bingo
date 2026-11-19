@@ -5,10 +5,11 @@ import CallInput from '../components/CallInput.vue';
 import CalledList from '../components/CalledList.vue';
 import PlayerList from '../components/PlayerList.vue';
 import HostSettings from '../components/HostSettings.vue';
-import { calledSet, game, leaveRoom, me, setBoardCount } from '../game';
-import { toggleCell } from '../actions';
+import ItemBar from '../components/ItemBar.vue';
+import ChatPanel from '../components/ChatPanel.vue';
+import { calledSet, game, leaveRoom, me } from '../game';
+import { clickCell } from '../actions';
 import { confirmDialog, toast } from '../ui';
-import { BOARD_COUNTS, type BoardCount } from '../../shared/board';
 
 const code = computed(() => game.session?.roomCode ?? '');
 const count = computed(() => game.boards.length);
@@ -24,12 +25,6 @@ const grid = computed(() => {
   if (n === 4) return { cols: 2, rows: 2 };
   return { cols: 3, rows: 2 };
 });
-
-async function changeCount(n: BoardCount) {
-  if (n === count.value) return;
-  const ok = await confirmDialog(`改成 ${n} 張？`, '你的盤面會全部重新抽，已喊清單不受影響。', '重抽');
-  if (ok) await setBoardCount(n);
-}
 
 async function copyLink() {
   const url = `${location.origin}/?r=${code.value}`;
@@ -72,20 +67,8 @@ async function onLeave() {
           <span class="muted">／目標 {{ target }} 條</span>
           <span v-if="me?.bingo" class="bingo">BINGO!</span>
         </div>
-        <div class="counts" role="group" aria-label="盤面張數">
-          <span class="muted lbl">張數</span>
-          <button
-            v-for="n in BOARD_COUNTS"
-            :key="n"
-            type="button"
-            class="cnt"
-            :class="{ on: n === count }"
-            :aria-pressed="n === count"
-            @click="changeCount(n)"
-          >
-            {{ n }}
-          </button>
-        </div>
+        <span class="muted cntinfo">每人 {{ count }} 張</span>
+        <ItemBar />
       </section>
 
       <div class="call"><CallInput /></div>
@@ -102,12 +85,16 @@ async function onLeave() {
           :index="i"
           :called="calledSet"
           :free-center="freeCenter"
+          :marks="game.marks[i]"
+          :aiming="game.itemMode === 'bomb'"
+          :recalling="game.itemMode === 'recall'"
           :large="count === 1"
-          @cell="toggleCell"
+          @cell="(cell, name) => clickCell(i, cell, name)"
         />
       </div>
 
       <div class="called"><CalledList /></div>
+      <div class="chatbox"><ChatPanel /></div>
       <div class="players"><PlayerList /></div>
       <div class="settings"><HostSettings /></div>
     </div>
@@ -197,6 +184,7 @@ async function onLeave() {
     'call'
     'boards'
     'called'
+    'chatbox'
     'players'
     'settings';
 }
@@ -220,6 +208,12 @@ async function onLeave() {
 .players {
   grid-area: players;
 }
+.chatbox {
+  grid-area: chatbox;
+}
+.cntinfo {
+  font-size: 13px;
+}
 .settings {
   grid-area: settings;
 }
@@ -239,31 +233,6 @@ async function onLeave() {
   letter-spacing: 2px;
   text-shadow: 0 0 10px rgba(240, 230, 210, 0.5);
 }
-.counts {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.counts .lbl {
-  font-size: 13px;
-  margin-right: 2px;
-}
-.cnt {
-  width: 34px;
-  height: 32px;
-  border-radius: 6px;
-  border: 1px solid var(--line);
-  background: var(--panel2);
-  color: var(--text);
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
-}
-.cnt.on {
-  border-color: var(--gold);
-  background: #3a2e15;
-  color: var(--gold2);
-}
 
 .boards {
   display: grid;
@@ -281,10 +250,11 @@ async function onLeave() {
 @media (min-width: 960px) {
   .layout {
     grid-template-columns: minmax(0, 1fr) 340px;
-    grid-template-rows: auto auto auto 1fr;
+    grid-template-rows: auto auto auto auto 1fr;
     grid-template-areas:
       'status call'
       'boards called'
+      'boards chatbox'
       'boards players'
       'boards settings';
     align-items: start;

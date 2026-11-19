@@ -33,6 +33,24 @@ export function normalizeNickname(input: unknown): string | null {
   return s;
 }
 
+export const CHAT_MAX = 100;
+
+/**
+ * 聊天訊息：1–100 字，換行改成空白。
+ * 控制字元與零寬字元直接拿掉（保留 U+200D，組合式 emoji 需要它）。
+ */
+export function normalizeChat(input: unknown): string | null {
+  if (typeof input !== 'string') return null;
+  const s = input
+    .normalize('NFC')
+    .replace(/\s+/gu, ' ')
+    .replace(/(?!‍)[\p{Cc}\p{Cf}\p{Co}\p{Cn}\p{Cs}]/gu, '')
+    .trim();
+  if (!s) return null;
+  if ([...s].length > CHAT_MAX) return null;
+  return s;
+}
+
 export const TARGET_MIN = 1;
 export const TARGET_MAX = 10;
 export const TARGET_DEFAULT = 3;
