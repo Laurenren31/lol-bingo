@@ -38,26 +38,46 @@ function sample<T>(pool: readonly T[], k: number, rand: RandInt): T[] {
   return a.slice(0, k);
 }
 
-/** 第 c 直排從 POOLS[c] 隨機抽 5 位（同一張不重複） */
-export function generateBoard(rand: RandInt = mathRandInt): Board {
+/** 直排順序：order[c] 是第 c 直排用的角色欄位索引（COLUMN_NAMES 的索引） */
+export type ColumnOrder = number[];
+export const DEFAULT_ORDER: ColumnOrder = [0, 1, 2, 3, 4];
+
+export function isColumnOrder(v: unknown): v is ColumnOrder {
+  return (
+    Array.isArray(v) &&
+    v.length === SIZE &&
+    [...v].sort((a, b) => a - b).every((x, i) => x === i)
+  );
+}
+
+/** 隨機直排順序；給 avoid 時保證和它不同 */
+export function randomColumnOrder(rand: RandInt = mathRandInt, avoid?: readonly number[]): ColumnOrder {
+  for (;;) {
+    const o = sample(DEFAULT_ORDER, SIZE, rand);
+    if (!avoid || o.some((x, i) => x !== avoid[i])) return o;
+  }
+}
+
+/** 第 c 直排從 POOLS[order[c]] 隨機抽 5 位（同一張不重複） */
+export function generateBoard(rand: RandInt = mathRandInt, order: readonly number[] = DEFAULT_ORDER): Board {
   const board = new Array<string>(CELLS);
-  POOLS.forEach((pool, c) => {
-    sample(pool, SIZE, rand).forEach((name, r) => {
+  order.forEach((col, c) => {
+    sample(POOLS[col], SIZE, rand).forEach((name, r) => {
       board[r * SIZE + c] = name;
     });
   });
   return board;
 }
 
-export function generateBoards(count: number, rand: RandInt = mathRandInt): Board[] {
-  return Array.from({ length: count }, () => generateBoard(rand));
+export function generateBoards(count: number, rand: RandInt = mathRandInt, order: readonly number[] = DEFAULT_ORDER): Board[] {
+  return Array.from({ length: count }, () => generateBoard(rand, order));
 }
 
-export function isValidBoard(b: unknown): b is Board {
+export function isValidBoard(b: unknown, order: readonly number[] = DEFAULT_ORDER): b is Board {
   return (
     Array.isArray(b) &&
     b.length === CELLS &&
-    b.every((n, i) => typeof n === 'string' && columnOf(n) === i % SIZE) &&
+    b.every((n, i) => typeof n === 'string' && columnOf(n) === order[i % SIZE]) &&
     new Set(b).size === CELLS
   );
 }
@@ -85,15 +105,21 @@ export function isCellIndex(v: unknown): v is number {
   return Number.isInteger(v) && (v as number) >= 0 && (v as number) < CELLS;
 }
 
-/** extra：這張盤面上被炸彈標記的格子 */
+/**
+ * extra：這張盤面上被炸彈標記的格子
+ * blocked：被強制遣返的英雄，那格變成空格、永遠不算蓋章（免費格除外）
+ */
 export function isMarked(
   board: Board,
   i: number,
   called: ReadonlySet<string>,
   freeCenter: boolean,
   extra?: ReadonlySet<number>,
+  blocked?: ReadonlySet<string>,
 ): boolean {
-  return (freeCenter && i === CENTER) || called.has(board[i]) || !!extra?.has(i);
+  if (freeCenter && i === CENTER) return true;
+  if (blocked?.has(board[i])) return false;
+  return called.has(board[i]) || !!extra?.has(i);
 }
 
 export function evaluateBoard(
@@ -101,9 +127,10 @@ export function evaluateBoard(
   called: ReadonlySet<string>,
   freeCenter: boolean,
   extra?: readonly number[],
+  blocked?: ReadonlySet<string>,
 ): BoardResult {
   const ex = extra?.length ? new Set(extra) : undefined;
-  const marked = board.map((_, i) => isMarked(board, i, called, freeCenter, ex));
+  const marked = board.map((_, i) => isMarked(board, i, called, freeCenter, ex, blocked));
   const win = new Set<number>();
   let lines = 0;
   for (const line of LINES) {
@@ -121,6 +148,7 @@ export function totalLines(
   called: ReadonlySet<string>,
   freeCenter: boolean,
   marks?: readonly (readonly number[] | undefined)[],
+  blocked?: ReadonlySet<string>,
 ): number {
-  return boards.reduce((sum, b, i) => sum + evaluateBoard(b, called, freeCenter, marks?.[i]).lines, 0);
+  return boards.reduce((sum, b, i) => sum + evaluateBoard(b, called, freeCenter, marks?.[i], blocked).lines, 0);
 }

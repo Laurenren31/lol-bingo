@@ -13,6 +13,7 @@ import {
   type ServerToClientEvents,
 } from '../shared/protocol';
 import { normalizeRoomCode } from '../shared/validate';
+import { COLUMN_NAMES } from '../shared/champions';
 import { toast } from './ui';
 
 const NICK_KEY = 'lolbingo.nick';
@@ -66,6 +67,8 @@ export const game = reactive({
   marks: [] as number[][],
   chat: [] as ChatMessage[],
   itemMode: null as ItemMode,
+  /** 下一次自動叫號的本機時間（毫秒）；沒在自動叫號時為 0 */
+  autoAt: 0,
   /** 自己剛達成 BINGO 時顯示的大視窗 */
   winLines: 0,
   winOpen: false,
@@ -76,6 +79,10 @@ export const me = computed(() => game.state?.players.find((p) => p.id === game.s
 export const isHost = computed(() => !!game.state && game.state.hostId === game.session?.playerId);
 export const calledSet = computed(() => new Set(game.state?.calls.map((c) => c.champion) ?? []));
 export const itemsOn = computed(() => !!game.state?.settings.items);
+export const blockedSet = computed(() => new Set(game.state?.recalled.map((r) => r.champion) ?? []));
+export const autoRunning = computed(() => !!game.state?.auto.running);
+/** 直排標題，依這一局的順序 */
+export const columnHeads = computed(() => (game.state?.columnOrder ?? [0, 1, 2, 3, 4]).map((i) => COLUMN_NAMES[i]));
 
 export function saveNick(nick: string) {
   game.nick = nick;
@@ -138,9 +145,15 @@ function handleFailure(r: Ack<object>): boolean {
   return false;
 }
 
+/** 伺服器給的是「還有幾毫秒」，換成本機時間，避免兩邊時鐘不一致 */
+function setState(s: RoomState) {
+  game.state = s;
+  game.autoAt = s.auto.running && s.auto.nextInMs !== null ? Date.now() + s.auto.nextInMs : 0;
+}
+
 function applyJoin(r: JoinResult) {
   setSession({ roomCode: r.roomCode, playerId: r.playerId, secret: r.secret });
-  game.state = r.state;
+  setState(r.state);
   game.boards = r.boards;
   game.marks = r.marks;
   game.chat = r.chat;
@@ -186,7 +199,7 @@ socket.on('room:state', (s) => {
     game.itemMode = null;
     toast('新的一局開始了！已喊清單已清空', { gold: true });
   }
-  game.state = s;
+  setState(s);
   // 道具被關掉或已經用掉，就離開選目標模式
   const mine = s.players.find((p) => p.id === game.session!.playerId);
   if ((game.itemMode === 'bomb' && !mine?.hasBomb) || (game.itemMode === 'recall' && !mine?.hasRecall)) game.itemMode = null;
@@ -244,6 +257,8 @@ export async function leaveRoom() {
 }
 
 export async function callChampion(champion: string) {
+  if (autoRunning.value) return toast('自動叫號中，不能手動喊');
+  if (blockedSet.value.has(champion)) return toast(`「${champion}」被強制遣返了，這一局不能再喊`);
   if (calledSet.value.has(champion)) return toast(`「${champion}」已經喊過了`);
   const r = await request('call:add', { champion });
   if (handleFailure(r) && r.ok && !r.changed) toast(`「${champion}」已經喊過了`);
@@ -269,7 +284,7 @@ export async function setBoardCount(count: BoardCount) {
   handleFailure(r);
 }
 
-export async function updateSettings(patch: { target?: number; freeCenter?: boolean; items?: boolean }) {
+export async function updateSettings(patch: { target?: number; freeCenter?: boolean; items?: boolean; autoCall?: boolean }) {
   const r = await request('settings:update', patch);
   handleFailure(r);
 }

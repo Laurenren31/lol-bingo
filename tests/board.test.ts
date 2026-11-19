@@ -6,6 +6,7 @@ import {
   generateBoard,
   generateBoards,
   isValidBoard,
+  randomColumnOrder,
   totalLines,
   type Board,
 } from '../shared/board';
@@ -26,9 +27,9 @@ function calledAt(board: Board, idx: number[]) {
 }
 
 describe('champions.json', () => {
-  it('173 位英雄、5 欄、欄位順序固定', () => {
+  it('173 位英雄、5 欄', () => {
     expect(CHAMPIONS).toHaveLength(173);
-    expect(COLUMN_NAMES).toEqual(['鬥士', '坦克', '法師', '射手', '輔助']);
+    expect(COLUMN_NAMES).toEqual(['鬥士', '坦克', '法師', '射手', '輔刺']);
     expect(POOLS.reduce((s, p) => s + p.length, 0)).toBe(173);
     POOLS.forEach((p) => expect(p.length).toBeGreaterThanOrEqual(5));
   });
@@ -55,6 +56,27 @@ describe('盤面產生', () => {
       expect(boards).toHaveLength(n);
       boards.forEach((b) => expect(isValidBoard(b)).toBe(true));
     }
+  });
+
+  it('指定直排順序：第 c 直排用 order[c] 那一欄', () => {
+    for (let seed = 1; seed <= 100; seed++) {
+      const order = randomColumnOrder(seeded(seed));
+      expect([...order].sort()).toEqual([0, 1, 2, 3, 4]);
+      const b = generateBoard(seeded(seed + 1000), order);
+      b.forEach((name, i) => expect(columnOf(name)).toBe(order[i % 5]));
+      expect(isValidBoard(b, order)).toBe(true);
+      if (order.join() !== '0,1,2,3,4') expect(isValidBoard(b)).toBe(false);
+      expect(randomColumnOrder(seeded(seed), order)).not.toEqual(order);
+    }
+  });
+
+  it('遣返的格子變空格：不算蓋章、免費格除外', () => {
+    const b = generateBoard(seeded(3));
+    const called = new Set(b.slice(0, 5)); // 第 1 橫排
+    expect(evaluateBoard(b, called, false).lines).toBe(1);
+    expect(evaluateBoard(b, called, false, [0, 1, 2, 3, 4], new Set([b[2]])).lines).toBe(0);
+    const mid = new Set([b[10], b[11], b[13], b[14]]);
+    expect(evaluateBoard(b, mid, true, undefined, new Set([b[12]])).lines).toBe(1);
   });
 
   it('isValidBoard 能擋下錯欄與重複', () => {

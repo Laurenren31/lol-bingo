@@ -5,7 +5,9 @@ import { confirmDialog } from '../ui';
 import { TARGET_MAX, TARGET_MIN } from '../../shared/validate';
 import { BOARD_COUNTS, type BoardCount } from '../../shared/board';
 
-const settings = computed(() => game.state?.settings ?? { target: 3, freeCenter: false, items: false, boardCount: 4 });
+const settings = computed(
+  () => game.state?.settings ?? { target: 3, freeCenter: false, items: false, boardCount: 4, autoCall: false },
+);
 const targets = Array.from({ length: TARGET_MAX - TARGET_MIN + 1 }, (_, i) => TARGET_MIN + i);
 
 function onTarget(e: Event) {
@@ -13,6 +15,9 @@ function onTarget(e: Event) {
 }
 function onFree(e: Event) {
   updateSettings({ freeCenter: (e.target as HTMLInputElement).checked });
+}
+function onAuto(e: Event) {
+  updateSettings({ autoCall: (e.target as HTMLInputElement).checked });
 }
 function onItems(e: Event) {
   updateSettings({ items: (e.target as HTMLInputElement).checked });
@@ -27,8 +32,12 @@ async function onCount(n: BoardCount) {
   if (ok) await setBoardCount(n);
 }
 async function onNewRound() {
-  const extra = settings.value.items ? '每個人的道具會補滿，' : '';
-  if (await confirmDialog('開新的一局？', `已喊清單和所有人的 BINGO 狀態都會清空，${extra}盤面不變。`, '開新的一局')) await newRound();
+  const extra = [
+    settings.value.items ? '每個人的道具會補滿。' : '',
+    settings.value.autoCall ? '10 秒後開始自動叫號。' : '',
+  ].join('');
+  const msg = `已喊清單和所有人的 BINGO 狀態都會清空，直排順序重新隨機，所有人的盤面重抽。${extra}`;
+  if (await confirmDialog('開新的一局？', msg, '開新的一局')) await newRound();
 }
 </script>
 
@@ -62,6 +71,13 @@ async function onNewRound() {
           </button>
         </div>
       </div>
+      <label class="row">
+        <span>
+          自動叫號
+          <small class="muted sub">按「開新的一局」後每 10 秒自動喊一位；關掉＝大家手動喊</small>
+        </span>
+        <input type="checkbox" class="toggle" :checked="settings.autoCall" :disabled="!isHost" @change="onAuto" />
+      </label>
       <label class="row">
         <span>
           可用道具

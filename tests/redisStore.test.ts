@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest';
 import RedisMock from 'ioredis-mock';
 import type Redis from 'ioredis';
 import { RedisStore, roomKeys } from '../server/store/redis';
-import { addPlayer, callChampion, evaluateBingo, newRoom, newRound, setBoardCount, useBomb } from '../server/game';
+import { addPlayer, callChampion, evaluateBingo, newRoom, newRound, setBoardCount, useBomb, useRecall } from '../server/game';
+import { isValidBoard } from '../shared/board';
 
 const rand = (n: number) => Math.floor(Math.random() * n);
 const A = 'aaaaaaaaaaaa';
@@ -62,6 +63,26 @@ describe('RedisStore', () => {
     expect(r.players[B]).toMatchObject({ bombUsed: true, marks: [[], [0, 1, 5, 6]] });
   });
 
+  it('直排順序、遣返清單、自動叫號狀態都能存回', async () => {
+    const { store } = await setup('RDS23C');
+    await store.update('RDS23C', (r) => {
+      r.items = true;
+      r.autoCall = true;
+      newRound(r, A, rand, 5000);
+      r.autoRunning = false;
+      callChampion(r, A, '安妮');
+      useRecall(r, B, '安妮');
+      r.autoRunning = true;
+    });
+    const before = (await store.get('RDS23C'))!;
+    expect(before.autoCall).toBe(true);
+    expect(before.autoRunning).toBe(true);
+    expect(before.nextAutoAt).toBe(15000);
+    expect(before.recalled).toEqual([{ champion: '安妮', by: B, byNick: '小B', calledByNick: '小A' }]);
+    expect([...before.columnOrder].sort()).toEqual([0, 1, 2, 3, 4]);
+    before.boards[A].forEach((b) => expect(isValidBoard(b, before.columnOrder)).toBe(true));
+  });
+
   it('聊天：只留最近 50 則，刪房一起刪', async () => {
     const { redis, store } = await setup('RDS23B');
     for (let i = 0; i < 55; i++) {
@@ -86,14 +107,14 @@ describe('RedisStore', () => {
 
   it('fn 丟錯就不寫入', async () => {
     const { store } = await setup('RDS237');
-    await expect(store.update('RDS237', (r) => newRound(r, B))).rejects.toThrow(/房主/);
+    await expect(store.update('RDS237', (r) => newRound(r, B, rand, Date.now()))).rejects.toThrow(/房主/);
     expect((await store.get('RDS237'))!.v).toBe(1);
   });
 
   it('清空的清單也能正確存回；TTL 6 小時；刪除', async () => {
     const { store, redis } = await setup('RDS238');
     await store.update('RDS238', (r) => callChampion(r, A, '安妮'));
-    await store.update('RDS238', (r) => newRound(r, A));
+    await store.update('RDS238', (r) => newRound(r, A, rand, Date.now()));
     const r = (await store.get('RDS238'))!;
     expect(r.calls).toEqual([]);
     expect(r.round).toBe(2);

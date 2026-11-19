@@ -4,9 +4,9 @@
     "坦克",
     "法師",
     "射手",
-    "輔助"
+    "輔刺"
   ],
-  "rule": "column = 官網英雄頁「角色」欄位的第一個角色；刺客併入輔助",
+  "rule": "column = 官網英雄頁「角色」欄位的第一個角色；刺客併入輔刺",
   "fetchedAt": "2026-11-15",
   "champions": [
     {
@@ -507,7 +507,7 @@
       "slug": "alistar",
       "officialRoles": [
         "坦克",
-        "輔助"
+        "輔刺"
       ],
       "column": "坦克",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/alistar/"
@@ -566,7 +566,7 @@
       "slug": "braum",
       "officialRoles": [
         "坦克",
-        "輔助"
+        "輔刺"
       ],
       "column": "坦克",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/braum/"
@@ -576,7 +576,7 @@
       "slug": "blitzcrank",
       "officialRoles": [
         "坦克",
-        "輔助"
+        "輔刺"
       ],
       "column": "坦克",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/blitzcrank/"
@@ -634,7 +634,7 @@
       "slug": "nautilus",
       "officialRoles": [
         "坦克",
-        "輔助"
+        "輔刺"
       ],
       "column": "坦克",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/nautilus/"
@@ -644,7 +644,7 @@
       "slug": "maokai",
       "officialRoles": [
         "坦克",
-        "輔助"
+        "輔刺"
       ],
       "column": "坦克",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/maokai/"
@@ -664,7 +664,7 @@
       "slug": "tahmkench",
       "officialRoles": [
         "坦克",
-        "輔助"
+        "輔刺"
       ],
       "column": "坦克",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/tahmkench/"
@@ -703,7 +703,7 @@
       "slug": "rell",
       "officialRoles": [
         "坦克",
-        "輔助"
+        "輔刺"
       ],
       "column": "坦克",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/rell/"
@@ -713,7 +713,7 @@
       "slug": "amumu",
       "officialRoles": [
         "坦克",
-        "輔助"
+        "輔刺"
       ],
       "column": "坦克",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/amumu/"
@@ -723,7 +723,7 @@
       "slug": "leona",
       "officialRoles": [
         "坦克",
-        "輔助"
+        "輔刺"
       ],
       "column": "坦克",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/leona/"
@@ -761,7 +761,7 @@
       "slug": "karma",
       "officialRoles": [
         "法師",
-        "輔助"
+        "輔刺"
       ],
       "column": "法師",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/karma/"
@@ -780,7 +780,7 @@
       "slug": "taliyah",
       "officialRoles": [
         "法師",
-        "輔助"
+        "輔刺"
       ],
       "column": "法師",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/taliyah/"
@@ -790,7 +790,7 @@
       "slug": "orianna",
       "officialRoles": [
         "法師",
-        "輔助"
+        "輔刺"
       ],
       "column": "法師",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/orianna/"
@@ -800,7 +800,7 @@
       "slug": "neeko",
       "officialRoles": [
         "法師",
-        "輔助"
+        "輔刺"
       ],
       "column": "法師",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/neeko/"
@@ -810,7 +810,7 @@
       "slug": "velkoz",
       "officialRoles": [
         "法師",
-        "輔助"
+        "輔刺"
       ],
       "column": "法師",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/velkoz/"
@@ -820,7 +820,7 @@
       "slug": "annie",
       "officialRoles": [
         "法師",
-        "輔助"
+        "輔刺"
       ],
       "column": "法師",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/annie/"
@@ -830,7 +830,7 @@
       "slug": "brand",
       "officialRoles": [
         "法師",
-        "輔助"
+        "輔刺"
       ],
       "column": "法師",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/brand/"
@@ -859,7 +859,7 @@
       "slug": "lux",
       "officialRoles": [
         "法師",
-        "輔助"
+        "輔刺"
       ],
       "column": "法師",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/lux/"
@@ -869,7 +869,7 @@
       "slug": "swain",
       "officialRoles": [
         "法師",
-        "輔助"
+        "輔刺"
       ],
       "column": "法師",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/swain/"
@@ -888,7 +888,7 @@
       "slug": "zyra",
       "officialRoles": [
         "法師",
-        "輔助"
+        "輔刺"
       ],
       "column": "法師",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/zyra/"
@@ -907,7 +907,7 @@
       "slug": "mel",
       "officialRoles": [
         "法師",
-        "輔助"
+        "輔刺"
       ],
       "column": "法師",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/mel/"
@@ -927,7 +927,7 @@
       "slug": "heimerdinger",
       "officialRoles": [
         "法師",
-        "輔助"
+        "輔刺"
       ],
       "column": "法師",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/heimerdinger/"
@@ -982,7 +982,7 @@
       "slug": "fiddlesticks",
       "officialRoles": [
         "法師",
-        "輔助"
+        "輔刺"
       ],
       "column": "法師",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/fiddlesticks/"
@@ -1002,7 +1002,7 @@
       "slug": "hwei",
       "officialRoles": [
         "法師",
-        "輔助"
+        "輔刺"
       ],
       "column": "法師",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/hwei/"
@@ -1069,7 +1069,7 @@
       "slug": "xerath",
       "officialRoles": [
         "法師",
-        "輔助"
+        "輔刺"
       ],
       "column": "法師",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/xerath/"
@@ -1301,7 +1301,7 @@
       "slug": "ashe",
       "officialRoles": [
         "射手",
-        "輔助"
+        "輔刺"
       ],
       "column": "射手",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/ashe/"
@@ -1360,7 +1360,7 @@
         "刺客",
         "法師"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/evelynn/"
     },
     {
@@ -1370,7 +1370,7 @@
         "刺客",
         "法師"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/elise/"
     },
     {
@@ -1379,7 +1379,7 @@
       "officialRoles": [
         "刺客"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/zed/"
     },
     {
@@ -1389,7 +1389,7 @@
         "刺客",
         "法師"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/leblanc/"
     },
     {
@@ -1398,7 +1398,7 @@
       "officialRoles": [
         "刺客"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/khazix/"
     },
     {
@@ -1408,7 +1408,7 @@
         "刺客",
         "法師"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/katarina/"
     },
     {
@@ -1418,27 +1418,27 @@
         "刺客",
         "法師"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/kassadin/"
     },
     {
       "name": "埃爾文",
       "slug": "ivern",
       "officialRoles": [
-        "輔助",
+        "輔刺",
         "法師"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/ivern/"
     },
     {
       "name": "塔里克",
       "slug": "taric",
       "officialRoles": [
-        "輔助",
+        "輔刺",
         "坦克"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/taric/"
     },
     {
@@ -1447,7 +1447,7 @@
       "officialRoles": [
         "刺客"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/talon/"
     },
     {
@@ -1457,17 +1457,17 @@
         "刺客",
         "法師"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/nidalee/"
     },
     {
       "name": "姍娜",
       "slug": "senna",
       "officialRoles": [
-        "輔助",
+        "輔刺",
         "射手"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/senna/"
     },
     {
@@ -1476,17 +1476,17 @@
       "officialRoles": [
         "刺客"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/qiyana/"
     },
     {
       "name": "娜米",
       "slug": "nami",
       "officialRoles": [
-        "輔助",
+        "輔刺",
         "法師"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/nami/"
     },
     {
@@ -1496,37 +1496,37 @@
         "刺客",
         "鬥士"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/naafiri/"
     },
     {
       "name": "巴德",
       "slug": "bard",
       "officialRoles": [
-        "輔助",
+        "輔刺",
         "法師"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/bard/"
     },
     {
       "name": "悠咪",
       "slug": "yuumi",
       "officialRoles": [
-        "輔助",
+        "輔刺",
         "法師"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/yuumi/"
     },
     {
       "name": "極靈",
       "slug": "zilean",
       "officialRoles": [
-        "輔助",
+        "輔刺",
         "法師"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/zilean/"
     },
     {
@@ -1536,87 +1536,87 @@
         "刺客",
         "法師"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/locke/"
     },
     {
       "name": "派克",
       "slug": "pyke",
       "officialRoles": [
-        "輔助",
+        "輔刺",
         "刺客"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/pyke/"
     },
     {
       "name": "珍娜",
       "slug": "janna",
       "officialRoles": [
-        "輔助",
+        "輔刺",
         "法師"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/janna/"
     },
     {
       "name": "瑟菈紛",
       "slug": "seraphine",
       "officialRoles": [
-        "輔助",
+        "輔刺",
         "法師"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/seraphine/"
     },
     {
       "name": "瑟雷西",
       "slug": "thresh",
       "officialRoles": [
-        "輔助",
+        "輔刺",
         "坦克"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/thresh/"
     },
     {
       "name": "睿娜妲．格萊斯克",
       "slug": "renata",
       "officialRoles": [
-        "輔助",
+        "輔刺",
         "法師"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/renata/"
     },
     {
       "name": "米里歐",
       "slug": "milio",
       "officialRoles": [
-        "輔助",
+        "輔刺",
         "法師"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/milio/"
     },
     {
       "name": "索娜",
       "slug": "sona",
       "officialRoles": [
-        "輔助",
+        "輔刺",
         "法師"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/sona/"
     },
     {
       "name": "索拉卡",
       "slug": "soraka",
       "officialRoles": [
-        "輔助",
+        "輔刺",
         "法師"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/soraka/"
     },
     {
@@ -1626,7 +1626,7 @@
         "刺客",
         "法師"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/ekko/"
     },
     {
@@ -1635,16 +1635,16 @@
       "officialRoles": [
         "刺客"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/shaco/"
     },
     {
       "name": "銳空",
       "slug": "rakan",
       "officialRoles": [
-        "輔助"
+        "輔刺"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/rakan/"
     },
     {
@@ -1653,7 +1653,7 @@
       "officialRoles": [
         "刺客"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/akali/"
     },
     {
@@ -1663,17 +1663,17 @@
         "刺客",
         "鬥士"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/rengar/"
     },
     {
       "name": "露璐",
       "slug": "lulu",
       "officialRoles": [
-        "輔助",
+        "輔刺",
         "法師"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/lulu/"
     },
     {
@@ -1683,17 +1683,17 @@
         "刺客",
         "鬥士"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/fizz/"
     },
     {
       "name": "魔甘娜",
       "slug": "morgana",
       "officialRoles": [
-        "輔助",
+        "輔刺",
         "法師"
       ],
-      "column": "輔助",
+      "column": "輔刺",
       "source": "https://www.leagueoflegends.com/zh-tw/champions/morgana/"
     }
   ]

@@ -1,12 +1,12 @@
 // 點格子、用道具等需要判斷或確認的操作
-import { calledSet, callChampion, game, useBomb, useRecall } from './game';
+import { autoRunning, blockedSet, calledSet, callChampion, game, useBomb, useRecall } from './game';
 import { confirmDialog, toast } from './ui';
 
 export async function askRecall(name: string) {
   if (!calledSet.value.has(name)) return toast(`「${name}」還沒有被喊過，請選一位已喊的英雄`);
   const ok = await confirmDialog(
     `對「${name}」使用強制遣返？`,
-    '會把它從已喊清單拔掉，所有人盤面上的這一格都會取消。這一局只能用一次。',
+    '會把它從已喊清單拔掉，所有人盤面上的這一格變成空格，不能再連線，這一局也不能再喊。強制遣返每局只能用一次。',
     '遣返',
   );
   if (ok) await useRecall(name);
@@ -25,6 +25,8 @@ export async function askBomb(board: number, cell: number, name: string) {
 export async function clickCell(board: number, cell: number, name: string) {
   if (game.itemMode === 'bomb') return askBomb(board, cell, name);
   if (game.itemMode === 'recall') return askRecall(name);
+  if (blockedSet.value.has(name)) return toast(`「${name}」被遣返了，這格是空格`);
+  if (autoRunning.value) return toast('自動叫號中，等系統喊就好');
   if (calledSet.value.has(name)) return toast(`「${name}」已經喊過了`);
   await callChampion(name);
 }

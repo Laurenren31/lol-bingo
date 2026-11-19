@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { CENTER, bombArea, evaluateBoard, type Board } from '../../shared/board';
-import { COLUMN_NAMES, getChampion } from '../../shared/champions';
+import { getChampion } from '../../shared/champions';
 
 const props = defineProps<{
   board: Board;
@@ -10,6 +10,10 @@ const props = defineProps<{
   freeCenter: boolean;
   /** 被炸彈標記的格子 */
   marks?: number[];
+  /** 被強制遣返的英雄（那格變空格） */
+  blocked?: ReadonlySet<string>;
+  /** 直排標題（依這一局的順序） */
+  heads: readonly string[];
   /** 正在選炸彈落點 */
   aiming?: boolean;
   /** 正在選要遣返的英雄 */
@@ -19,7 +23,7 @@ const props = defineProps<{
 const emit = defineEmits<{ cell: [cell: number, name: string] }>();
 
 // 只用來決定顯示樣式；合計條數與 BINGO 以伺服器為準
-const result = computed(() => evaluateBoard(props.board, props.called, props.freeCenter, props.marks));
+const result = computed(() => evaluateBoard(props.board, props.called, props.freeCenter, props.marks, props.blocked));
 const winSet = computed(() => new Set(result.value.winCells));
 const bombed = computed(() => new Set(props.marks ?? []));
 
@@ -30,13 +34,15 @@ const aimSet = computed(() => new Set(props.aiming && hover.value !== null ? bom
 const cells = computed(() =>
   props.board.map((name, i) => {
     const free = props.freeCenter && i === CENTER;
+    const gone = !free && !!props.blocked?.has(name);
     return {
+      gone,
       name,
       free,
       slug: getChampion(name)?.slug ?? '',
       hit: result.value.marked[i],
       win: winSet.value.has(i),
-      bomb: bombed.value.has(i) && !props.called.has(name),
+      bomb: bombed.value.has(i) && !props.called.has(name) && !gone,
       aim: aimSet.value.has(i),
       target: props.recalling && props.called.has(name),
     };
@@ -55,20 +61,21 @@ function hideImg(e: Event) {
       <span><b>{{ result.lines }}</b> 條</span>
     </div>
     <div class="grid">
-      <div v-for="c in COLUMN_NAMES" :key="c" class="colhead">{{ c }}</div>
+      <div v-for="c in heads" :key="c" class="colhead">{{ c }}</div>
       <button
         v-for="(c, i) in cells"
         :key="i"
         type="button"
         class="cell"
-        :class="{ hit: c.hit, win: c.win, free: c.free, bomb: c.bomb, aim: c.aim, target: c.target }"
+        :class="{ hit: c.hit, win: c.win, free: c.free, bomb: c.bomb, aim: c.aim, target: c.target, gone: c.gone }"
         :disabled="c.free && !aiming"
         :aria-pressed="c.hit"
-        :aria-label="c.free ? '免費格' : c.name + (c.bomb ? '（炸彈蓋章）' : c.hit ? '（已蓋章）' : '')"
+        :aria-label="c.free ? '免費格' : c.name + (c.gone ? '（已遣返，空格）' : c.bomb ? '（炸彈蓋章）' : c.hit ? '（已蓋章）' : '')"
         @mouseenter="hover = i"
         @click="(!c.free || aiming) && emit('cell', i, c.name)"
       >
-        <img v-if="!c.free && c.slug" :src="`/champions/${c.slug}.webp`" alt="" loading="lazy" decoding="async" @error="hideImg" />
+        <span v-if="c.gone" class="gonemark" aria-hidden="true">✕</span>
+        <img v-if="!c.free && !c.gone && c.slug" :src="`/champions/${c.slug}.webp`" alt="" loading="lazy" decoding="async" @error="hideImg" />
         <span class="name">{{ c.free ? '★免費★' : c.name }}</span>
       </button>
     </div>
@@ -219,6 +226,31 @@ function hideImg(e: Event) {
 .cell.free.win {
   background: linear-gradient(145deg, #a8894f, #785a28);
 }
+/* 被遣返：空格，不能連線 */
+.cell.gone {
+  background: repeating-linear-gradient(135deg, #0b1119 0 6px, #111a26 6px 12px);
+  border: 1px dashed #4a5566;
+  cursor: default;
+}
+.cell.gone::before {
+  display: none;
+}
+.cell.gone .name {
+  color: #5c6878;
+  text-decoration: line-through;
+}
+.gonemark {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 14%;
+  font-size: clamp(14px, 9cqi, 40px);
+  font-weight: 900;
+  color: rgba(232, 115, 92, 0.55);
+}
+
 /* 炸彈蓋的章：橘色 */
 .cell.bomb:not(.win) {
   border-color: #e8935c;

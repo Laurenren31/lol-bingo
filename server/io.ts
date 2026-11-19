@@ -2,7 +2,8 @@ import http from 'node:http';
 import { createHash, randomBytes, randomInt, timingSafeEqual } from 'node:crypto';
 import { Server, type Socket } from 'socket.io';
 import { isChampion } from '../shared/champions';
-import { isBoardCount, isCellIndex, type RandInt } from '../shared/board';
+import { isBoardCount, isCellIndex, randomColumnOrder, type RandInt } from '../shared/board';
+import { COLUMN_NAMES } from '../shared/champions';
 import {
   MAX_PLAYERS,
   type Ack,
@@ -27,6 +28,7 @@ import {
   GameError,
   SEEN_LAST,
   addPlayer,
+  autoCallTick,
   callChampion,
   evaluateBingo,
   marksOf,
@@ -62,6 +64,8 @@ export interface GameServerOptions {
   rand?: RandInt;
   /** 心跳／房主檢查間隔，預設 15 秒 */
   sweepMs?: number;
+  /** 自動叫號檢查間隔，預設 0.5 秒 */
+  autoTickMs?: number;
 }
 
 const cryptoRandInt: RandInt = (n) => randomInt(n);
@@ -132,8 +136,9 @@ export function createGameServer(opts: GameServerOptions) {
   async function broadcast(code: string, room?: RoomData | null) {
     room ??= await store.get(code);
     if (!room) return;
+    track(room);
     const presence = presenceFromSeen(await store.getSeen(code), now());
-    const state = toPublicState(room, presence);
+    const state = toPublicState(room, presence, now());
     lastSig.set(code, signature(state.hostId, presence.online));
     io.to(code).emit('room:state', state);
   }
@@ -162,8 +167,54 @@ export function createGameServer(opts: GameServerOptions) {
     postChat(code, { kind: 'system', playerId: '', nick: '', text, notify });
 
   async function publicStateOf(room: RoomData) {
-    return toPublicState(room, presenceFromSeen(await store.getSeen(room.code), now()));
+    track(room);
+    return toPublicState(room, presenceFromSeen(await store.getSeen(room.code), now()), now());
   }
+
+  // ---------- 自動叫號 ----------
+  // 每台 instance 記下「自己身上有連線的房間」下一次自動叫號的時間，到了就去 Redis 喊一位。
+  // 多台 instance 同時到期也沒關係：寫入是樂觀鎖，autoCallTick 會檢查時間，只有一台喊得成功。
+  const autoDue = new Map<string, number>();
+  const autoBusy = new Set<string>();
+
+  function track(room: RoomData) {
+    if (room.autoRunning) autoDue.set(room.code, room.nextAutoAt);
+    else autoDue.delete(room.code);
+  }
+
+  async function autoTick(code: string) {
+    const room = await store.get(code);
+    if (!room) return void autoDue.delete(code);
+    track(room);
+    if (!room.autoRunning || now() < room.nextAutoAt) return;
+    const res = await store.update(code, (r) => autoCallTick(r, now(), rand));
+    if (!res) return void autoDue.delete(code);
+    const { room: after, result } = res;
+    if (!result) return track(after);
+    announce(code, result.announces);
+    await broadcast(code, after);
+    if (result.champion === null) await systemChat(code, '所有英雄都喊完了，自動叫號結束');
+    else if (result.announces.length) {
+      await systemChat(code, `有人 BINGO 了，自動叫號停止（${result.announces.map((a) => a.nick).join('、')}）`);
+    } else if (!after.autoRunning) await systemChat(code, '所有英雄都喊完了，自動叫號結束');
+  }
+
+  const autoTimer = setInterval(() => {
+    const t = now();
+    for (const [code, due] of autoDue) {
+      if (due > t || autoBusy.has(code)) continue;
+      // 這台已經沒有這個房間的連線，就交給其他 instance
+      if (!io.of('/').adapter.rooms.get(code)?.size) {
+        autoDue.delete(code);
+        continue;
+      }
+      autoBusy.add(code);
+      autoTick(code)
+        .catch((e) => console.error('[auto] tick failed for room', code, e))
+        .finally(() => autoBusy.delete(code));
+    }
+  }, opts.autoTickMs ?? 500);
+  autoTimer.unref();
 
   /** 檢查房主是否該換人；需要時寫入並回傳 true */
   async function checkHost(code: string): Promise<boolean> {
@@ -249,6 +300,7 @@ export function createGameServer(opts: GameServerOptions) {
       const secret = newSecret();
       for (let i = 0; i < 8; i++) {
         const room = newRoom(generateRoomCode(rand), now());
+        room.columnOrder = randomColumnOrder(rand);
         addPlayer(room, pid, nick, sha256(secret), now(), rand);
         if (await store.create(room)) return joinResult(socket, room, pid, secret);
       }
@@ -364,7 +416,10 @@ export function createGameServer(opts: GameServerOptions) {
         return { nick: r.players[pid].nick, call };
       });
       await broadcast(code, room);
-      await systemChat(code, `↩️ ${result.nick} 對「${champion}」使用了強制遣返（原本是 ${result.call.byNick} 喊的）`);
+      await systemChat(
+        code,
+        `↩️ ${result.nick} 對「${champion}」使用了強制遣返（原本是 ${result.call.byNick} 喊的），那格變成空格`,
+      );
       return { ok: true };
     });
 
@@ -383,6 +438,10 @@ export function createGameServer(opts: GameServerOptions) {
         if (typeof p.items !== 'boolean') bad('道具設定不正確');
         patch.items = p.items;
       }
+      if (p.autoCall !== undefined) {
+        if (typeof p.autoCall !== 'boolean') bad('叫號設定不正確');
+        patch.autoCall = p.autoCall;
+      }
       const { room, result } = await mutate(code, (r) => {
         const changed = updateSettings(r, pid, patch);
         return { changed, announces: evaluateBingo(r) };
@@ -393,6 +452,12 @@ export function createGameServer(opts: GameServerOptions) {
       if (c.items !== undefined) {
         await systemChat(code, c.items ? '房主開啟了道具：每人每局有 💣 炸彈和 ↩️ 強制遣返各一個' : '房主關閉了道具');
       }
+      if (c.autoCall !== undefined) {
+        await systemChat(
+          code,
+          c.autoCall ? '房主改成自動叫號：按「開新的一局」後每 10 秒自動喊一位' : '房主改成手動叫號，自動叫號已停止',
+        );
+      }
       if (c.target !== undefined) await systemChat(code, `房主把 BINGO 條件改成 ${c.target} 條`);
       if (c.freeCenter !== undefined) await systemChat(code, c.freeCenter ? '房主開啟了中間免費格' : '房主關閉了中間免費格');
       return { ok: true };
@@ -401,11 +466,13 @@ export function createGameServer(opts: GameServerOptions) {
     on('round:new', async () => {
       const { code, pid } = member(socket);
       const { room } = await mutate(code, (r) => {
-        newRound(r, pid);
+        newRound(r, pid, rand, now());
       });
       sendBoards(room);
       await broadcast(code, room);
-      await systemChat(code, `第 ${room.round} 局開始！${room.items ? '道具已補滿' : ''}`, false);
+      const order = room.columnOrder.map((i) => COLUMN_NAMES[i]).join(' > ');
+      const extra = [room.items ? '道具已補滿' : '', room.autoCall ? '10 秒後開始自動叫號' : ''].filter(Boolean).join('，');
+      await systemChat(code, `第 ${room.round} 局開始！直排順序：${order}${extra ? '。' + extra : ''}`, false);
       return { ok: true };
     });
 
@@ -474,6 +541,7 @@ export function createGameServer(opts: GameServerOptions) {
     sweep,
     async close() {
       clearInterval(timer);
+      clearInterval(autoTimer);
       await new Promise<void>((resolve) => io.close(() => resolve()));
     },
   };

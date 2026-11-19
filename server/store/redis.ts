@@ -1,7 +1,7 @@
 // Upstash Redis 版 store。
 //
 // Key 設計（{code} 是 Redis hash tag，同一房間的 key 會落在同一個 slot）：
-//   bingo:room:{code}          hash  v, code, hostId, target, freeCenter, items, boardCount, round, createdAt, updatedAt, seq, nextJoinOrder
+//   bingo:room:{code}          hash  v, code, hostId, target, freeCenter, items, boardCount, autoCall, autoRunning, nextAutoAt, columnOrder, recalled, round, createdAt, updatedAt, seq, nextJoinOrder
 //   bingo:room:{code}:players  hash  playerId → JSON {nick, boardCount, joinOrder, joinedAt, secretHash, bombUsed, recallUsed, marks}
 //   bingo:room:{code}:boards   hash  playerId → JSON Board[]
 //   bingo:room:{code}:calls    zset  英雄名（score = 喊叫流水號 seq）
@@ -15,7 +15,8 @@
 // 因此可以安全地共用同一條 ioredis 連線。
 import type Redis from 'ioredis';
 import type { CallData, PlayerData, RoomData } from '../game';
-import { isBoardCount, type Board } from '../../shared/board';
+import { DEFAULT_ORDER, isBoardCount, isColumnOrder, type Board } from '../../shared/board';
+import type { RecallData } from '../game';
 import { CHAT_HISTORY, type ChatMessage } from '../../shared/protocol';
 import { GameError } from '../game';
 import { ROOM_TTL_SECONDS, type Store } from './types';
@@ -82,6 +83,11 @@ function serialize(room: RoomData) {
     'freeCenter', room.freeCenter ? '1' : '0',
     'items', room.items ? '1' : '0',
     'boardCount', String(room.boardCount),
+    'autoCall', room.autoCall ? '1' : '0',
+    'autoRunning', room.autoRunning ? '1' : '0',
+    'nextAutoAt', String(room.nextAutoAt),
+    'columnOrder', JSON.stringify(room.columnOrder),
+    'recalled', JSON.stringify(room.recalled),
     'round', String(room.round),
     'createdAt', String(room.createdAt),
     'updatedAt', String(room.updatedAt),
@@ -99,6 +105,17 @@ function serialize(room: RoomData) {
 
 function parseJson<T>(s: string): T {
   return JSON.parse(s) as T;
+}
+
+/** 舊資料沒有這個欄位或格式不對時用預設值 */
+function parseOr<T>(s: string | undefined, ok: (v: unknown) => boolean, fallback: T): T {
+  if (!s) return fallback;
+  try {
+    const v = JSON.parse(s);
+    return ok(v) ? (v as T) : fallback;
+  } catch {
+    return fallback;
+  }
 }
 
 function deserialize(
@@ -123,6 +140,11 @@ function deserialize(
     freeCenter: meta.freeCenter === '1',
     items: meta.items === '1',
     boardCount: isBoardCount(Number(meta.boardCount)) ? (Number(meta.boardCount) as 1 | 2 | 4 | 6) : 4,
+    autoCall: meta.autoCall === '1',
+    autoRunning: meta.autoRunning === '1',
+    nextAutoAt: Number(meta.nextAutoAt) || 0,
+    columnOrder: parseOr(meta.columnOrder, isColumnOrder, [...DEFAULT_ORDER]),
+    recalled: parseOr(meta.recalled, Array.isArray, [] as RecallData[]),
     round: Number(meta.round),
     createdAt: Number(meta.createdAt),
     updatedAt: Number(meta.updatedAt),

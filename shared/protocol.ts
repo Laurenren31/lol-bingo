@@ -67,6 +67,18 @@ export interface RoomSettings {
   items: boolean;
   /** 全房統一的盤面張數（只有房主能改） */
   boardCount: BoardCount;
+  /** 自動叫號：開啟後按「開新的一局」開始，每 AUTO_CALL_MS 自動喊一位 */
+  autoCall: boolean;
+}
+
+export const AUTO_CALL_MS = 10_000;
+
+export interface PublicRecall {
+  champion: string;
+  /** 誰用了強制遣返 */
+  byNick: string;
+  /** 原本是誰喊的 */
+  calledByNick: string;
 }
 
 /** 自己的盤面與炸彈標記（marks[i] 是第 i 張被炸到的格子） */
@@ -84,6 +96,12 @@ export interface RoomState {
   round: number;
   /** 依喊的順序排列（seq 由小到大） */
   calls: PublicCall[];
+  /** 這一局被強制遣返的英雄：盤面上那格變空格，這一局也不能再喊 */
+  recalled: PublicRecall[];
+  /** 這一局的直排順序：columnOrder[c] 是第 c 直排的角色欄位索引 */
+  columnOrder: number[];
+  /** 自動叫號是否正在進行，以及距離下一次還有幾毫秒 */
+  auto: { running: boolean; nextInMs: number | null };
   players: PublicPlayer[];
 }
 
@@ -122,7 +140,10 @@ export interface ClientToServerEvents {
   'item:bomb': (p: { board: number; cell: number }, ack: (r: Ack) => void) => void;
   /** 道具：把一位已喊的英雄從清單拔掉（全房生效） */
   'item:recall': (p: { champion: string }, ack: (r: Ack) => void) => void;
-  'settings:update': (p: Partial<Pick<RoomSettings, 'target' | 'freeCenter' | 'items'>>, ack: (r: Ack) => void) => void;
+  'settings:update': (
+    p: Partial<Pick<RoomSettings, 'target' | 'freeCenter' | 'items' | 'autoCall'>>,
+    ack: (r: Ack) => void,
+  ) => void;
   'round:new': (p: Record<string, never>, ack: (r: Ack) => void) => void;
   'chat:send': (p: { text: string }, ack: (r: Ack) => void) => void;
 }

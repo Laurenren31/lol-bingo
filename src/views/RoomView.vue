@@ -7,7 +7,7 @@ import PlayerList from '../components/PlayerList.vue';
 import HostSettings from '../components/HostSettings.vue';
 import ItemBar from '../components/ItemBar.vue';
 import ChatPanel from '../components/ChatPanel.vue';
-import { calledSet, game, leaveRoom, me } from '../game';
+import { blockedSet, calledSet, columnHeads, game, leaveRoom, me } from '../game';
 import { clickCell } from '../actions';
 import { confirmDialog, toast } from '../ui';
 
@@ -86,6 +86,8 @@ async function onLeave() {
           :called="calledSet"
           :free-center="freeCenter"
           :marks="game.marks[i]"
+          :blocked="blockedSet"
+          :heads="columnHeads"
           :aiming="game.itemMode === 'bomb'"
           :recalling="game.itemMode === 'recall'"
           :large="count === 1"

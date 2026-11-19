@@ -7,6 +7,7 @@ const calls = computed(() => game.state?.calls ?? []);
 const mine = computed(() => new Set(game.boards.flat()));
 const latestSeq = computed(() => calls.value.at(-1)?.seq ?? -1);
 const recalling = computed(() => game.itemMode === 'recall');
+const recalled = computed(() => game.state?.recalled ?? []);
 </script>
 
 <template>
@@ -32,6 +33,13 @@ const recalling = computed(() => game.itemMode === 'recall');
         </button>
       </li>
     </ol>
+    <div v-if="recalled.length" class="gone">
+      <span class="muted glbl">已遣返（這一局不能再喊）</span>
+      <span v-for="r in recalled" :key="r.champion" class="chip gonechip" :title="`${r.calledByNick} 喊的，被 ${r.byNick} 遣返`">
+        <span class="nm">{{ r.champion }}</span>
+        <span class="by">{{ r.byNick }}</span>
+      </span>
+    </div>
   </section>
 </template>
 
@@ -59,6 +67,27 @@ const recalling = computed(() => game.itemMode === 'recall');
 }
 .call:disabled {
   opacity: 1;
+}
+.gone {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line);
+}
+.glbl {
+  font-size: 12px;
+  width: 100%;
+}
+.gonechip {
+  border-style: dashed;
+  opacity: 0.75;
+}
+.gonechip .nm {
+  text-decoration: line-through;
+  color: var(--muted);
 }
 .pick {
   color: var(--danger);

@@ -58,7 +58,7 @@ function onJoin() {
 <template>
   <main class="home">
     <h1>英雄聯盟賓果</h1>
-    <p class="sub">每一直排固定一種角色：鬥士、坦克、法師、射手、輔助<br />大家共用一份已喊清單，連線數達標就 BINGO！</p>
+    <p class="sub">每一直排一種角色：鬥士、坦克、法師、射手、輔刺（每局順序隨機）<br />大家共用一份已喊清單，連線數達標就 BINGO！</p>
 
     <section class="panel card">
       <label class="label" for="nick">暱稱</label>
