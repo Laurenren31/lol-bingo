@@ -1,7 +1,7 @@
 // Upstash Redis 版 store。
 //
 // Key 設計（{code} 是 Redis hash tag，同一房間的 key 會落在同一個 slot）：
-//   bingo:room:{code}          hash  v, code, hostId, target, freeCenter, items, boardCount, autoCall, autoRunning, nextAutoAt, columnOrder, recalled, round, createdAt, updatedAt, seq, nextJoinOrder
+//   bingo:room:{code}          hash  v, code, hostId, target, freeCenter, items, boardCount, autoCall, started, autoRunning, nextAutoAt, columnOrder, recalled, round, createdAt, updatedAt, seq, nextJoinOrder
 //   bingo:room:{code}:players  hash  playerId → JSON {nick, boardCount, joinOrder, joinedAt, secretHash, bombUsed, recallUsed, marks}
 //   bingo:room:{code}:boards   hash  playerId → JSON Board[]
 //   bingo:room:{code}:calls    zset  英雄名（score = 喊叫流水號 seq）
@@ -84,6 +84,7 @@ function serialize(room: RoomData) {
     'items', room.items ? '1' : '0',
     'boardCount', String(room.boardCount),
     'autoCall', room.autoCall ? '1' : '0',
+    'started', room.started ? '1' : '0',
     'autoRunning', room.autoRunning ? '1' : '0',
     'nextAutoAt', String(room.nextAutoAt),
     'columnOrder', JSON.stringify(room.columnOrder),
@@ -141,6 +142,8 @@ function deserialize(
     items: meta.items === '1',
     boardCount: isBoardCount(Number(meta.boardCount)) ? (Number(meta.boardCount) as 1 | 2 | 4 | 6) : 4,
     autoCall: meta.autoCall === '1',
+    // 舊資料沒有這個欄位：當作已經開始（不打斷正在玩的房間）
+    started: meta.started === undefined ? true : meta.started === '1',
     autoRunning: meta.autoRunning === '1',
     nextAutoAt: Number(meta.nextAutoAt) || 0,
     columnOrder: parseOr(meta.columnOrder, isColumnOrder, [...DEFAULT_ORDER]),

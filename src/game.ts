@@ -81,6 +81,8 @@ export const calledSet = computed(() => new Set(game.state?.calls.map((c) => c.c
 export const itemsOn = computed(() => !!game.state?.settings.items);
 export const blockedSet = computed(() => new Set(game.state?.recalled.map((r) => r.champion) ?? []));
 export const autoRunning = computed(() => !!game.state?.auto.running);
+/** 這一局開始了沒（開始前不能喊、不能用道具；開始後設定鎖定） */
+export const started = computed(() => !!game.state?.started);
 /** 直排標題，依這一局的順序 */
 export const columnHeads = computed(() => (game.state?.columnOrder ?? [0, 1, 2, 3, 4]).map((i) => COLUMN_NAMES[i]));
 
@@ -257,6 +259,7 @@ export async function leaveRoom() {
 }
 
 export async function callChampion(champion: string) {
+  if (!started.value) return toast('房主還沒按「開始」，這一局還沒開始');
   if (autoRunning.value) return toast('自動叫號中，不能手動喊');
   if (blockedSet.value.has(champion)) return toast(`「${champion}」被強制遣返了，這一局不能再喊`);
   if (calledSet.value.has(champion)) return toast(`「${champion}」已經喊過了`);
@@ -291,5 +294,10 @@ export async function updateSettings(patch: { target?: number; freeCenter?: bool
 
 export async function newRound() {
   const r = await request('round:new', {});
+  handleFailure(r);
+}
+
+export async function startRound() {
+  const r = await request('round:start', {});
   handleFailure(r);
 }

@@ -8,16 +8,18 @@
 
 ## 玩法重點
 
+- **每一局分成兩段**：
+  - 準備中：房主調整設定（條數、張數、叫號方式、道具、免費格），這時還不能喊、不能用道具。
+  - 進行中：房主按「開始」後才能喊，所有設定鎖定，要等房主按「開新的一局」回到準備中才能再改。
 - 一間房最多 20 人；盤面張數（1／2／4／6）由房主決定，全房一致，改張數時所有人一起重抽。
 - 五個直排是鬥士、坦克、法師、射手、輔刺（刺客併入輔刺）。每一局的直排順序隨機（全房相同，且一定和上一局不同），開新的一局時所有人的盤面依新順序重抽。
 - 喊過的英雄不能取消（跟一般賓果一樣）。唯一能拔掉已喊英雄的方法是道具「強制遣返」。
 - **叫號方式**（房主設定）：
   - 手動叫號：大家自己輸入或點盤面喊英雄。
-  - 自動叫號：開啟後按「開新的一局」開始，伺服器每 10 秒從還沒喊過、沒被遣返的英雄裡隨機喊一位，期間不能手動喊。有人 BINGO、英雄喊完或房主關掉時停止。
+  - 自動叫號：開啟後房主按「開始」才開始，伺服器每 10 秒從還沒喊過、沒被遣返的英雄裡隨機喊一位，期間不能手動喊。有人 BINGO、英雄喊完或房主開新的一局時停止。
 - **道具**（房主在設定裡開啟）：每人每局各一個，房主開新的一局時補滿。
   - 💣 炸彈：選自己某張盤面上的一格，以它為中心的 3×3 直接蓋章。只影響自己那張，不會加進已喊清單。
   - ↩️ 強制遣返：把任何人喊過的一位英雄從已喊清單拔掉。所有人盤面上的那一格變成空格，不能再連線（炸彈也蓋不回來，免費格不受影響），這一局也不能再喊。
-  - 房主改張數時，炸彈標記會隨舊盤面消失，所以炸彈退還；強制遣返已經影響全房，不退還。
 - **聊天室**：房內所有人即時對話，保留最近 50 則，重新連線也看得到。道具使用、房主改設定、進出房間也會顯示在聊天室裡。
 
 英雄資料只有一個來源：`shared/champions.json`。它和上一層資料夾的 `champions.json` 是同一份檔案，內容沒有改動。
@@ -73,7 +75,7 @@ npm run dev
 
 | Key | 型別 | 內容 |
 |---|---|---|
-| `bingo:room:{房號}` | hash | `v`（版本）、`hostId`、`target`、`freeCenter`、`round`、`seq`、`columnOrder`、`recalled`、`autoCall`、`nextAutoAt`… |
+| `bingo:room:{房號}` | hash | `v`（版本）、`hostId`、`target`、`freeCenter`、`round`、`seq`、`columnOrder`、`recalled`、`autoCall`、`started`、`nextAutoAt`… |
 | `bingo:room:{房號}:players` | hash | playerId → 暱稱、張數、加入順序、密鑰雜湊、道具使用紀錄、炸彈標記 |
 | `bingo:room:{房號}:boards` | hash | playerId → 盤面 JSON |
 | `bingo:room:{房號}:calls` | zset | 英雄名（score＝喊叫順序） |
@@ -126,19 +128,20 @@ vercel --prod          # 部署 Production
 | `room:join` | `{ roomCode, nick, playerId?, secret? }` |
 | `room:resume` | `{ roomCode, playerId, secret }` |
 | `room:leave` | `{}` |
-| `boards:setCount` | `{ count: 1 \| 2 \| 4 \| 6 }`（只有房主能用，全房重抽） |
+| `boards:setCount` | `{ count: 1 \| 2 \| 4 \| 6 }`（只有房主能用，只能在準備中改；全房重抽） |
 | `call:add` | `{ champion }` |
 | `item:bomb` | `{ board, cell }`（炸自己第 board 張、以 cell 為中心的 3×3） |
 | `item:recall` | `{ champion }`（強制遣返） |
-| `settings:update` | `{ target?: 1–10, freeCenter?: boolean, items?: boolean, autoCall?: boolean }`（只有房主能用） |
-| `round:new` | `{}`（只有房主能用；道具補滿、直排順序重新隨機、盤面重抽；有開自動叫號就開始計時） |
+| `settings:update` | `{ target?: 1–10, freeCenter?: boolean, items?: boolean, autoCall?: boolean }`（只有房主能用，只能在準備中改） |
+| `round:new` | `{}`（只有房主能用；道具補滿、直排順序重新隨機、盤面重抽，回到準備中） |
+| `round:start` | `{}`（只有房主能用；開始這一局，設定鎖定；有開自動叫號就開始計時） |
 | `chat:send` | `{ text }`（1–100 字） |
 
 **伺服器 → 玩家**
 
 | 事件 | 資料 |
 |---|---|
-| `room:state` | 全房共用狀態：設定、已喊清單、遣返清單、直排順序、自動叫號倒數、玩家（條數、BINGO、在線、房主、剩餘道具） |
+| `room:state` | 全房共用狀態：設定、這一局開始了沒、已喊清單、遣返清單、直排順序、自動叫號倒數、玩家（條數、BINGO、在線、房主、剩餘道具） |
 | `me:boards` | 只傳給自己的盤面與炸彈標記 |
 | `bingo:announce` | 有人剛達成 BINGO |
 | `chat:message` | 新的聊天或系統訊息 |
@@ -148,7 +151,7 @@ vercel --prod          # 部署 Production
 - 英雄必須在 champions.json 內。
 - 暱稱 1–12 字，不可含控制字元或零寬字元。
 - 房號必須是 6 碼，只用 `23456789ABCDEFGHJKLMNPQRSTUVWXYZ`。
-- 只有房主能改設定與張數。
+- 只有房主能改設定與張數，而且只能在準備中改。
 - 道具要房間有開、而且這一局還沒用過才能用。
 - 聊天訊息 1–100 字，控制字元與零寬字元會被拿掉。
 - 每條連線限制連發 10 次，之後每秒回補 5 次。

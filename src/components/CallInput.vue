@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from 'vue';
 import { CHAMPION_NAMES, isChampion } from '../../shared/champions';
-import { autoRunning, callChampion, game } from '../game';
+import { autoRunning, callChampion, game, started } from '../game';
 import { toast } from '../ui';
 
 const autoMode = computed(() => !!game.state?.settings.autoCall);
@@ -29,13 +29,16 @@ async function submit() {
 </script>
 
 <template>
-  <div v-if="autoMode" class="auto" role="status" aria-live="polite">
+  <div v-if="!started" class="auto" role="status" aria-live="polite">
+    <span class="muted">準備中：等房主設定好後按「開始」（{{ autoMode ? '自動叫號' : '手動叫號' }}）</span>
+  </div>
+  <div v-else-if="autoMode" class="auto" role="status" aria-live="polite">
     <template v-if="autoRunning">
       <span class="pulse"></span>
       <span>自動叫號中，<b>{{ secondsLeft }}</b> 秒後喊下一位</span>
       <span v-if="lastCall" class="last">剛剛：<b>{{ lastCall }}</b></span>
     </template>
-    <span v-else class="muted">自動叫號：等房主按「開新的一局」開始</span>
+    <span v-else class="muted">自動叫號已停止，房主可以按「開新的一局」</span>
   </div>
   <form v-else class="callrow" @submit.prevent="submit">
     <input

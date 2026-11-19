@@ -1,5 +1,5 @@
 // 點格子、用道具等需要判斷或確認的操作
-import { autoRunning, blockedSet, calledSet, callChampion, game, useBomb, useRecall } from './game';
+import { autoRunning, blockedSet, calledSet, callChampion, game, started, useBomb, useRecall } from './game';
 import { confirmDialog, toast } from './ui';
 
 export async function askRecall(name: string) {
@@ -25,6 +25,7 @@ export async function askBomb(board: number, cell: number, name: string) {
 export async function clickCell(board: number, cell: number, name: string) {
   if (game.itemMode === 'bomb') return askBomb(board, cell, name);
   if (game.itemMode === 'recall') return askRecall(name);
+  if (!started.value) return toast('房主還沒按「開始」，這一局還沒開始');
   if (blockedSet.value.has(name)) return toast(`「${name}」被遣返了，這格是空格`);
   if (autoRunning.value) return toast('自動叫號中，等系統喊就好');
   if (calledSet.value.has(name)) return toast(`「${name}」已經喊過了`);

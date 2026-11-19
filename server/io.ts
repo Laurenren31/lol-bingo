@@ -34,6 +34,7 @@ import {
   marksOf,
   newRoom,
   newRound,
+  startRound,
   presenceFromSeen,
   removePlayer,
   seenField,
@@ -455,7 +456,7 @@ export function createGameServer(opts: GameServerOptions) {
       if (c.autoCall !== undefined) {
         await systemChat(
           code,
-          c.autoCall ? '房主改成自動叫號：按「開新的一局」後每 10 秒自動喊一位' : '房主改成手動叫號，自動叫號已停止',
+          c.autoCall ? '房主改成自動叫號：按「開始」後每 10 秒自動喊一位' : '房主改成手動叫號',
         );
       }
       if (c.target !== undefined) await systemChat(code, `房主把 BINGO 條件改成 ${c.target} 條`);
@@ -466,13 +467,23 @@ export function createGameServer(opts: GameServerOptions) {
     on('round:new', async () => {
       const { code, pid } = member(socket);
       const { room } = await mutate(code, (r) => {
-        newRound(r, pid, rand, now());
+        newRound(r, pid, rand);
       });
       sendBoards(room);
       await broadcast(code, room);
       const order = room.columnOrder.map((i) => COLUMN_NAMES[i]).join(' > ');
-      const extra = [room.items ? '道具已補滿' : '', room.autoCall ? '10 秒後開始自動叫號' : ''].filter(Boolean).join('，');
-      await systemChat(code, `第 ${room.round} 局開始！直排順序：${order}${extra ? '。' + extra : ''}`, false);
+      await systemChat(code, `第 ${room.round} 局準備中，直排順序：${order}。房主設定好後按「開始」`, false);
+      return { ok: true };
+    });
+
+    on('round:start', async () => {
+      const { code, pid } = member(socket);
+      const { room } = await mutate(code, (r) => {
+        startRound(r, pid, now());
+      });
+      await broadcast(code, room);
+      const extra = room.autoCall ? '，10 秒後開始自動叫號' : '，大家可以開始喊了';
+      await systemChat(code, `第 ${room.round} 局開始！設定已鎖定${extra}`);
       return { ok: true };
     });
 

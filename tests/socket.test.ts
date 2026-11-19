@@ -88,9 +88,47 @@ describe('Socket.IO 流程', () => {
     ).toMatchObject({ ok: false, code: 'AUTH' });
   });
 
-  it('喊英雄：全房同步，B 盤面上的格子也算進去', async () => {
+  it('準備中：不能喊；房主開道具、改張數、改條數，非房主不行', async () => {
+    await rest();
+    expect(await b.emitWithAck('call:add', { champion: joinB.boards[0][0] })).toMatchObject({
+      ok: false,
+      code: 'BAD_INPUT',
+      message: expect.stringContaining('還沒開始'),
+    });
+    expect(await b.emitWithAck('settings:update', { items: true })).toMatchObject({ ok: false, code: 'NOT_HOST' });
+    expect(await b.emitWithAck('boards:setCount', { count: 6 })).toMatchObject({ ok: false, code: 'NOT_HOST' });
+    const on = nextState(b, (s) => s.settings.items && s.settings.target === 1);
+    expect(await a.emitWithAck('settings:update', { items: true, target: 1 })).toMatchObject({ ok: true });
+    expect((await on).players.every((p) => p.hasBomb && p.hasRecall)).toBe(true);
+
+    const boardsA = new Promise<{ boards: string[][] }>((res) => a.once('me:boards', res));
+    const boardsB = new Promise<{ boards: string[][]; marks: number[][] }>((res) => b.once('me:boards', res));
+    expect(await a.emitWithAck('boards:setCount', { count: 6 })).toMatchObject({ ok: true });
+    expect((await boardsA).boards).toHaveLength(6);
+    joinB.boards = (await boardsB).boards;
+    expect(joinB.boards).toHaveLength(6);
+  });
+
+  it('開始：只有房主能按；開始後設定鎖定', async () => {
+    await rest();
+    expect(await b.emitWithAck('round:start', {})).toMatchObject({ ok: false, code: 'NOT_HOST' });
+    const st = nextState(b, (s) => s.started);
+    expect(await a.emitWithAck('round:start', {})).toMatchObject({ ok: true });
+    await st;
+    expect(await a.emitWithAck('round:start', {})).toMatchObject({ ok: false, code: 'BAD_INPUT' });
+    expect(await a.emitWithAck('settings:update', { target: 3 })).toMatchObject({
+      ok: false,
+      code: 'BAD_INPUT',
+      message: expect.stringContaining('已經開始'),
+    });
+    expect(await a.emitWithAck('boards:setCount', { count: 2 })).toMatchObject({ ok: false, code: 'BAD_INPUT' });
+  });
+
+  it('喊英雄：全房同步，B 盤面上的格子也算進去，達成就廣播 BINGO', async () => {
+    await rest();
     const target = joinB.boards[0];
     const stateA = nextState(a, (s) => s.calls.length === 5);
+    const ann = new Promise<{ nick: string }>((res) => a.once('bingo:announce', res));
     for (const i of [0, 1, 2, 3, 4]) {
       const r = await a.emitWithAck('call:add', { champion: target[i] });
       expect(r.ok).toBe(true);
@@ -98,24 +136,14 @@ describe('Socket.IO 流程', () => {
     const s = await stateA;
     expect(s.calls.map((c) => c.byNick)).toEqual(Array(5).fill('小A'));
     expect(s.players.find((p) => p.id === joinB.playerId)!.lines).toBeGreaterThanOrEqual(1);
+    expect((await ann).nick).toBe('小B');
     const again = await b.emitWithAck('call:add', { champion: target[0] });
     expect(again).toMatchObject({ ok: true, changed: false });
   });
 
-  it('房主調低條數 → 廣播 BINGO', async () => {
-    const ann = new Promise<{ nick: string }>((res) => a.once('bingo:announce', res));
-    expect(await a.emitWithAck('settings:update', { target: 1 })).toMatchObject({ ok: true });
-    expect((await ann).nick).toBe('小B');
-  });
-
-  it('沒開道具不能遣返；房主開道具後，強制遣返會重算並發系統訊息', async () => {
+  it('強制遣返會重算並發系統訊息，一局一次', async () => {
+    await rest();
     const champ = joinB.boards[0][2];
-    expect(await b.emitWithAck('item:recall', { champion: champ })).toMatchObject({ ok: false, code: 'BAD_INPUT' });
-    expect(await b.emitWithAck('settings:update', { items: true })).toMatchObject({ ok: false, code: 'NOT_HOST' });
-    const on = nextState(b, (s) => s.settings.items);
-    expect(await a.emitWithAck('settings:update', { items: true })).toMatchObject({ ok: true });
-    expect((await on).players.every((p) => p.hasBomb && p.hasRecall)).toBe(true);
-
     const st = nextState(b, (s) => s.calls.length === 4);
     const msg = new Promise<ChatMessage>((res) => a.once('chat:message', res));
     expect(await b.emitWithAck('item:recall', { champion: champ })).toMatchObject({ ok: true });
@@ -138,17 +166,6 @@ describe('Socket.IO 流程', () => {
     expect((await mine).marks[0]).toEqual([6, 7, 8, 11, 12, 13, 16, 17, 18]);
     await st;
     expect(aGotBoards).toBe(false);
-  });
-
-  it('改張數：只有房主能改，全房都收到新盤面', async () => {
-    expect(await b.emitWithAck('boards:setCount', { count: 6 })).toMatchObject({ ok: false, code: 'NOT_HOST' });
-    const boardsA = new Promise<{ boards: string[][] }>((res) => a.once('me:boards', res));
-    const boardsB = new Promise<{ boards: string[][]; marks: number[][] }>((res) => b.once('me:boards', res));
-    expect(await a.emitWithAck('boards:setCount', { count: 6 })).toMatchObject({ ok: true });
-    expect((await boardsA).boards).toHaveLength(6);
-    const nb = await boardsB;
-    expect(nb.boards).toHaveLength(6);
-    expect(nb.marks.flat()).toEqual([]);
   });
 
   it('聊天：全房收到，重新進房拿得到歷史', async () => {
@@ -188,14 +205,17 @@ describe('Socket.IO 流程', () => {
     b = b2;
   });
 
-  it('開新的一局（房主）：道具補滿', async () => {
+  it('開新的一局（房主）：道具補滿，回到準備中', async () => {
     await rest();
     const st = nextState(b, (s) => s.round === 2);
     expect(await a.emitWithAck('round:new', {})).toMatchObject({ ok: true });
     const s = await st;
+    expect(s.started).toBe(false);
     expect(s.calls).toEqual([]);
     expect(s.players.every((p) => !p.bingo)).toBe(true);
     expect(s.players.every((p) => p.hasBomb && p.hasRecall)).toBe(true);
+    // 回到準備中，又可以改設定
+    expect(await a.emitWithAck('settings:update', { target: 3 })).toMatchObject({ ok: true });
   });
 
   it('頻率限制', async () => {

@@ -64,7 +64,9 @@ export interface RoomData {
   boardCount: BoardCount;
   /** 自動叫號模式 */
   autoCall: boolean;
-  /** 自動叫號正在跑（開新的一局時開始，有人 BINGO 或關掉就停） */
+  /** 這一局是否已經開始（開始前可以改設定、不能喊；開始後設定鎖定） */
+  started: boolean;
+  /** 自動叫號正在跑（按「開始」時開始，有人 BINGO 或英雄喊完就停） */
   autoRunning: boolean;
   /** 下一次自動叫號的時間（毫秒）；沒在跑時為 0 */
   nextAutoAt: number;
@@ -105,6 +107,7 @@ export function newRoom(code: string, now: number): RoomData {
     items: false,
     boardCount: DEFAULT_BOARD_COUNT,
     autoCall: false,
+    started: false,
     autoRunning: false,
     nextAutoAt: 0,
     columnOrder: [...DEFAULT_ORDER],
@@ -162,6 +165,13 @@ export function marksOf(room: RoomData, id: string): number[][] {
   return Array.from({ length: n }, (_, i) => m[i] ?? []);
 }
 
+function requireStarted(room: RoomData) {
+  if (!room.started) throw new GameError('BAD_INPUT', '房主還沒按「開始」，這一局還沒開始');
+}
+function requireNotStarted(room: RoomData) {
+  if (room.started) throw new GameError('BAD_INPUT', '遊戲已經開始，要等「開新的一局」後才能改設定');
+}
+
 export function hasBomb(room: RoomData, id: string) {
   return room.items && !!room.players[id] && !room.players[id].bombUsed;
 }
@@ -173,6 +183,7 @@ export function hasRecall(room: RoomData, id: string) {
 export function useBomb(room: RoomData, playerId: string, boardIndex: number, cell: number) {
   const p = requirePlayer(room, playerId);
   if (!room.items) throw new GameError('BAD_INPUT', '這個房間沒有開啟道具');
+  requireStarted(room);
   if (p.bombUsed) throw new GameError('BAD_INPUT', '這一局的炸彈已經用掉了');
   const boards = room.boards[playerId] ?? [];
   if (!Number.isInteger(boardIndex) || boardIndex < 0 || boardIndex >= boards.length) {
@@ -189,6 +200,7 @@ export function useBomb(room: RoomData, playerId: string, boardIndex: number, ce
 export function useRecall(room: RoomData, playerId: string, champion: string): CallData {
   const p = requirePlayer(room, playerId);
   if (!room.items) throw new GameError('BAD_INPUT', '這個房間沒有開啟道具');
+  requireStarted(room);
   if (p.recallUsed) throw new GameError('BAD_INPUT', '這一局的強制遣返已經用掉了');
   const call = room.calls.find((c) => c.champion === champion);
   if (!call) throw new GameError('BAD_INPUT', `「${champion}」還沒有被喊過`);
@@ -227,6 +239,7 @@ export function evaluateBingo(room: RoomData): BingoAnnounce[] {
 
 export function callChampion(room: RoomData, playerId: string, champion: string): boolean {
   const p = requirePlayer(room, playerId);
+  requireStarted(room);
   if (room.autoRunning) throw new GameError('BAD_INPUT', '自動叫號中，不能手動喊');
   if (room.recalled.some((r) => r.champion === champion)) {
     throw new GameError('BAD_INPUT', `「${champion}」被強制遣返了，這一局不能再喊`);
@@ -243,6 +256,7 @@ export function callChampion(room: RoomData, playerId: string, champion: string)
  */
 export function setBoardCount(room: RoomData, playerId: string, count: BoardCount, rand: RandInt): boolean {
   requireHost(room, playerId);
+  requireNotStarted(room);
   if (room.boardCount === count) return false;
   room.boardCount = count;
   for (const [id, p] of Object.entries(room.players)) {
@@ -295,6 +309,7 @@ export type SettingsPatch = { target?: number; freeCenter?: boolean; items?: boo
 /** 回傳實際有變動的欄位 */
 export function updateSettings(room: RoomData, playerId: string, patch: SettingsPatch): SettingsPatch {
   requireHost(room, playerId);
+  requireNotStarted(room);
   const changed: SettingsPatch = {};
   if (patch.target !== undefined && patch.target !== room.target) room.target = changed.target = patch.target;
   if (patch.freeCenter !== undefined && patch.freeCenter !== room.freeCenter) {
@@ -303,7 +318,6 @@ export function updateSettings(room: RoomData, playerId: string, patch: Settings
   if (patch.items !== undefined && patch.items !== room.items) room.items = changed.items = patch.items;
   if (patch.autoCall !== undefined && patch.autoCall !== room.autoCall) {
     room.autoCall = changed.autoCall = patch.autoCall;
-    if (!room.autoCall) stopAuto(room);
   }
   return changed;
 }
@@ -311,9 +325,9 @@ export function updateSettings(room: RoomData, playerId: string, patch: Settings
 /**
  * 開新的一局：清空已喊、遣返、BINGO 與炸彈標記，道具補滿；
  * 直排順序重新隨機（一定和上一局不同），所有人的盤面依新順序重抽。
- * 有開自動叫號就從現在開始計時。
+ * 新的一局先進入「準備中」：房主可以改設定，按「開始」後才能喊。
  */
-export function newRound(room: RoomData, playerId: string, rand: RandInt, now: number) {
+export function newRound(room: RoomData, playerId: string, rand: RandInt) {
   requireHost(room, playerId);
   room.calls = [];
   room.recalled = [];
@@ -324,10 +338,19 @@ export function newRound(room: RoomData, playerId: string, rand: RandInt, now: n
   for (const id of Object.keys(room.players)) {
     room.boards[id] = generateBoards(room.boardCount, rand, room.columnOrder);
   }
+  room.started = false;
+  stopAuto(room);
+}
+
+/** 開始這一局：設定從此鎖定；有開自動叫號就從現在開始計時 */
+export function startRound(room: RoomData, playerId: string, now: number) {
+  requireHost(room, playerId);
+  requireNotStarted(room);
+  room.started = true;
   if (room.autoCall) {
     room.autoRunning = true;
     room.nextAutoAt = now + AUTO_CALL_MS;
-  } else stopAuto(room);
+  }
 }
 
 function playersByOrder(room: RoomData): [string, PlayerData][] {
@@ -430,6 +453,7 @@ export function toPublicState(room: RoomData, presence: Presence, now: number = 
       autoCall: room.autoCall,
     },
     round: room.round,
+    started: room.started,
     calls: room.calls.map((c) => ({ champion: c.champion, byId: c.by, byNick: c.byNick, seq: c.seq })),
     recalled: room.recalled.map((r) => ({ champion: r.champion, byNick: r.byNick, calledByNick: r.calledByNick })),
     columnOrder: [...room.columnOrder],

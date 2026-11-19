@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { game, itemsOn, me, type ItemMode } from '../game';
+import { game, itemsOn, me, started, type ItemMode } from '../game';
 import { toast } from '../ui';
 
 const hasBomb = computed(() => !!me.value?.hasBomb);
@@ -12,6 +12,7 @@ function pick(mode: Exclude<ItemMode, null>) {
     game.itemMode = null;
     return;
   }
+  if (!started.value) return toast('這一局開始後才能用道具');
   if (mode === 'recall' && noCalls.value) return toast('還沒有人喊，沒有可以遣返的英雄');
   game.itemMode = mode;
 }

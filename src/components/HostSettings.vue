@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { game, isHost, newRound, setBoardCount, updateSettings } from '../game';
+import { game, isHost, newRound, setBoardCount, started, startRound, updateSettings } from '../game';
 import { confirmDialog } from '../ui';
 import { TARGET_MAX, TARGET_MIN } from '../../shared/validate';
 import { BOARD_COUNTS, type BoardCount } from '../../shared/board';
@@ -8,6 +8,8 @@ import { BOARD_COUNTS, type BoardCount } from '../../shared/board';
 const settings = computed(
   () => game.state?.settings ?? { target: 3, freeCenter: false, items: false, boardCount: 4, autoCall: false },
 );
+/** 只有房主、而且這一局還沒開始時可以改 */
+const locked = computed(() => !isHost.value || started.value);
 const targets = Array.from({ length: TARGET_MAX - TARGET_MIN + 1 }, (_, i) => TARGET_MIN + i);
 
 function onTarget(e: Event) {
@@ -23,21 +25,23 @@ function onItems(e: Event) {
   updateSettings({ items: (e.target as HTMLInputElement).checked });
 }
 async function onCount(n: BoardCount) {
-  if (!isHost.value || n === settings.value.boardCount) return;
+  if (locked.value || n === settings.value.boardCount) return;
   const ok = await confirmDialog(
     `全房改成 ${n} 張？`,
-    '所有人的盤面都會重新抽，已喊清單不受影響。用過的炸彈會退還（強制遣返不退）。',
+    '所有人的盤面都會重新抽。',
     '重抽',
   );
   if (ok) await setBoardCount(n);
 }
 async function onNewRound() {
-  const extra = [
-    settings.value.items ? '每個人的道具會補滿。' : '',
-    settings.value.autoCall ? '10 秒後開始自動叫號。' : '',
-  ].join('');
-  const msg = `已喊清單和所有人的 BINGO 狀態都會清空，直排順序重新隨機，所有人的盤面重抽。${extra}`;
+  const msg = `已喊清單和所有人的 BINGO 狀態都會清空，直排順序重新隨機，所有人的盤面重抽${
+    settings.value.items ? '，道具補滿' : ''
+  }。新的一局會先進入準備中，可以重新調整設定，再按「開始」。`;
   if (await confirmDialog('開新的一局？', msg, '開新的一局')) await newRound();
+}
+async function onStart() {
+  const msg = `開始後就不能再改設定，要等開新的一局。${settings.value.autoCall ? '10 秒後開始自動叫號。' : ''}`;
+  if (await confirmDialog('開始這一局？', msg, '開始')) await startRound();
 }
 </script>
 
@@ -45,12 +49,14 @@ async function onNewRound() {
   <section class="panel">
     <h2 class="panel-title">
       <span>房間設定</span>
-      <span v-if="!isHost" class="hint">只有房主可以修改</span>
+      <span v-if="started" class="hint">🔒 遊戲進行中，開新的一局後才能改</span>
+      <span v-else-if="!isHost" class="hint">只有房主可以修改</span>
+      <span v-else class="hint ready">準備中，設定好後按「開始」</span>
     </h2>
     <div class="rows">
       <label class="row">
         <span>合計幾條算 BINGO</span>
-        <select class="field sel" :value="settings.target" :disabled="!isHost" @change="onTarget">
+        <select class="field sel" :value="settings.target" :disabled="locked" @change="onTarget">
           <option v-for="t in targets" :key="t" :value="t">{{ t }} 條</option>
         </select>
       </label>
@@ -64,7 +70,7 @@ async function onNewRound() {
             class="cnt"
             :class="{ on: n === settings.boardCount }"
             :aria-pressed="n === settings.boardCount"
-            :disabled="!isHost"
+            :disabled="locked"
             @click="onCount(n)"
           >
             {{ n }}
@@ -74,22 +80,23 @@ async function onNewRound() {
       <label class="row">
         <span>
           自動叫號
-          <small class="muted sub">按「開新的一局」後每 10 秒自動喊一位；關掉＝大家手動喊</small>
+          <small class="muted sub">按「開始」後每 10 秒自動喊一位；關掉＝大家手動喊</small>
         </span>
-        <input type="checkbox" class="toggle" :checked="settings.autoCall" :disabled="!isHost" @change="onAuto" />
+        <input type="checkbox" class="toggle" :checked="settings.autoCall" :disabled="locked" @change="onAuto" />
       </label>
       <label class="row">
         <span>
           可用道具
           <small class="muted sub">每人每局 💣 炸彈、↩️ 強制遣返各一個</small>
         </span>
-        <input type="checkbox" class="toggle" :checked="settings.items" :disabled="!isHost" @change="onItems" />
+        <input type="checkbox" class="toggle" :checked="settings.items" :disabled="locked" @change="onItems" />
       </label>
       <label class="row">
         <span>中間為免費格</span>
-        <input type="checkbox" class="toggle" :checked="settings.freeCenter" :disabled="!isHost" @change="onFree" />
+        <input type="checkbox" class="toggle" :checked="settings.freeCenter" :disabled="locked" @change="onFree" />
       </label>
-      <button class="btn primary" :disabled="!isHost" @click="onNewRound">開新的一局</button>
+      <button v-if="!started" class="btn primary" :disabled="!isHost" @click="onStart">開始</button>
+      <button v-else class="btn primary" :disabled="!isHost" @click="onNewRound">開新的一局</button>
     </div>
   </section>
 </template>
@@ -98,6 +105,9 @@ async function onNewRound() {
 .hint {
   font-weight: 500;
   font-size: 12px;
+}
+.hint.ready {
+  color: var(--gold2);
 }
 .rows {
   display: flex;

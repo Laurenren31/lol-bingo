@@ -94,6 +94,8 @@ export interface RoomState {
   hostId: string;
   settings: RoomSettings;
   round: number;
+  /** 這一局是否已經開始：開始前可以改設定、不能喊；開始後設定鎖定 */
+  started: boolean;
   /** 依喊的順序排列（seq 由小到大） */
   calls: PublicCall[];
   /** 這一局被強制遣返的英雄：盤面上那格變空格，這一局也不能再喊 */
@@ -145,6 +147,8 @@ export interface ClientToServerEvents {
     ack: (r: Ack) => void,
   ) => void;
   'round:new': (p: Record<string, never>, ack: (r: Ack) => void) => void;
+  /** 房主開始這一局（之後設定鎖定，直到開新的一局） */
+  'round:start': (p: Record<string, never>, ack: (r: Ack) => void) => void;
   'chat:send': (p: { text: string }, ack: (r: Ack) => void) => void;
 }
 

@@ -14,6 +14,7 @@ import {
   removePlayer,
   seenField,
   setBoardCount,
+  startRound,
   toPublicState,
   transferHostIfNeeded,
   updateSettings,
@@ -35,6 +36,8 @@ function roomWith(...nicks: string[]): RoomData {
   return r;
 }
 const P = (i: number) => `p${i}aaaaaaaa`;
+/** 房主按「開始」 */
+const start = (r: RoomData) => startRound(r, P(0), T0);
 
 /** 只保留某位玩家、不含炸彈標記的複本，用來比較條數 */
 function roomWithBoards(r: RoomData, pid: string): RoomData {
@@ -82,6 +85,7 @@ describe('房間邏輯', () => {
 
   it('喊叫：不重複，記錄喊的人與順序', () => {
     const r = roomWith('A', 'B');
+    start(r);
     expect(callChampion(r, P(0), '伊瑞莉雅')).toBe(true);
     expect(callChampion(r, P(1), '伊瑞莉雅')).toBe(false);
     expect(callChampion(r, P(1), '亞歷斯塔')).toBe(true);
@@ -93,6 +97,7 @@ describe('房間邏輯', () => {
 
   it('不在房內的人不能喊', () => {
     const r = roomWith('A');
+    start(r);
     expect(() => callChampion(r, 'nobody123', '伊瑞莉雅')).toThrow(GameError);
   });
 
@@ -100,6 +105,7 @@ describe('房間邏輯', () => {
     const r = roomWith('A', 'B');
     r.target = 1;
     r.items = true;
+    start(r);
     callLine(r, P(0));
     const ann = evaluateBingo(r);
     expect(ann.map((a) => a.playerId)).toContain(P(0));
@@ -120,6 +126,7 @@ describe('房間邏輯', () => {
     const b = generateBoard(rand);
     r.boards[P(0)] = [b];
     r.target = 2;
+    start(r);
     callLine(r, P(0), 0, [0, 1, 2, 3, 4]); // 第 1 橫排
     callLine(r, P(0), 0, [5, 10, 15, 20]); // 第 1 直排（0 已喊）
     expect(evaluateBingo(r)).toHaveLength(1);
@@ -141,6 +148,7 @@ describe('房間邏輯', () => {
     r.boards[P(0)] = [a, b];
     r.players[P(0)].boardCount = 2;
     r.target = 2;
+    start(r);
     for (const i of [0, 1, 2, 3, 4]) callChampion(r, P(0), a[i]);
     evaluateBingo(r);
     const one = linesOf(r, P(0));
@@ -155,16 +163,17 @@ describe('房間邏輯', () => {
     const b = generateBoard(rand);
     r.boards[P(0)] = [b];
     r.target = 1;
+    start(r);
     for (const i of [10, 11, 13, 14]) callChampion(r, P(0), b[i]);
     expect(evaluateBingo(r)).toHaveLength(0);
-    updateSettings(r, P(0), { freeCenter: true });
+    r.freeCenter = true;
     expect(evaluateBingo(r)).toHaveLength(1);
   });
 
   it('只有房主能改設定與開新局', () => {
     const r = roomWith('A', 'B');
     expect(() => updateSettings(r, P(1), { target: 5 })).toThrow(/房主/);
-    expect(() => newRound(r, P(1), rand, T0)).toThrow(/房主/);
+    expect(() => newRound(r, P(1), rand)).toThrow(/房主/);
     updateSettings(r, P(0), { target: 5 });
     expect(r.target).toBe(5);
   });
@@ -173,12 +182,14 @@ describe('房間邏輯', () => {
     const r = roomWith('A', 'B');
     r.target = 1;
     r.items = true;
+    start(r);
     callLine(r, P(0));
     useRecall(r, P(1), r.calls[0].champion);
     evaluateBingo(r);
     for (let k = 0; k < 20; k++) {
       const prev = [...r.columnOrder];
-      newRound(r, P(0), rand, T0);
+      newRound(r, P(0), rand);
+      expect(r.started).toBe(false);
       expect(r.columnOrder).not.toEqual(prev);
       expect([...r.columnOrder].sort()).toEqual(DEFAULT_ORDER);
       for (const id of [P(0), P(1)]) {
@@ -208,9 +219,43 @@ describe('房間邏輯', () => {
   });
 });
 
+describe('準備中與開始', () => {
+  it('準備中可以改設定，但不能喊、不能用道具；只有房主能開始', () => {
+    const r = roomWith('A', 'B');
+    expect(r.started).toBe(false);
+    r.items = true;
+    const name = r.boards[P(0)][0][0];
+    expect(() => callChampion(r, P(1), name)).toThrow(/還沒開始/);
+    expect(() => useBomb(r, P(1), 0, 12)).toThrow(/還沒開始/);
+    expect(() => useRecall(r, P(1), name)).toThrow(/還沒開始/);
+    expect(updateSettings(r, P(0), { target: 2, freeCenter: true })).toEqual({ target: 2, freeCenter: true });
+    expect(setBoardCount(r, P(0), 2, rand)).toBe(true);
+    expect(() => startRound(r, P(1), T0)).toThrow(/房主/);
+    start(r);
+    expect(toPublicState(r, presenceFromSeen({}, T0)).started).toBe(true);
+    expect(callChampion(r, P(1), name)).toBe(true);
+  });
+
+  it('開始後設定全部鎖定，開新的一局才能再改', () => {
+    const r = roomWith('A');
+    start(r);
+    expect(() => start(r)).toThrow(/已經開始/);
+    expect(() => updateSettings(r, P(0), { target: 5 })).toThrow(/已經開始/);
+    expect(() => updateSettings(r, P(0), { items: true })).toThrow(/已經開始/);
+    expect(() => updateSettings(r, P(0), { autoCall: true })).toThrow(/已經開始/);
+    expect(() => updateSettings(r, P(0), { freeCenter: true })).toThrow(/已經開始/);
+    expect(() => setBoardCount(r, P(0), 6, rand)).toThrow(/已經開始/);
+    expect(r.target).not.toBe(5);
+    newRound(r, P(0), rand);
+    expect(updateSettings(r, P(0), { target: 5 })).toEqual({ target: 5 });
+    expect(setBoardCount(r, P(0), 6, rand)).toBe(true);
+  });
+});
+
 describe('道具', () => {
   it('沒開道具不能用', () => {
     const r = roomWith('A');
+    start(r);
     callChampion(r, P(0), r.boards[P(0)][0][0]);
     expect(() => useBomb(r, P(0), 0, 12)).toThrow(/沒有開啟道具/);
     expect(() => useRecall(r, P(0), r.boards[P(0)][0][0])).toThrow(/沒有開啟道具/);
@@ -228,6 +273,7 @@ describe('道具', () => {
     const r = roomWith('A', 'B');
     r.items = true;
     r.boards[P(0)] = [generateBoard(rand), generateBoard(rand)];
+    start(r);
     // 第 2 張：喊第 1 橫排的 0、4，再炸以 7 為中心 → 0–4 全滿＝1 條（另外 1–3、6–8 也被標記）
     callChampion(r, P(1), r.boards[P(0)][1][0]);
     callChampion(r, P(1), r.boards[P(0)][1][4]);
@@ -246,6 +292,7 @@ describe('道具', () => {
   it('強制遣返：拔掉任何人喊的英雄，一局一次；沒喊過的不能遣返', () => {
     const r = roomWith('A', 'B');
     r.items = true;
+    start(r);
     callChampion(r, P(0), '伊瑞莉雅');
     callChampion(r, P(0), '亞歷斯塔');
     expect(() => useRecall(r, P(1), '阿璃')).toThrow(/還沒有被喊過/);
@@ -259,16 +306,15 @@ describe('道具', () => {
     ]);
   });
 
-  it('新的一局道具補滿、炸彈標記清掉；改張數退還炸彈但不退強制遣返', () => {
+  it('新的一局道具補滿、炸彈標記清掉', () => {
     const r = roomWith('A');
     r.items = true;
+    start(r);
     callChampion(r, P(0), r.boards[P(0)][0][0]);
     useBomb(r, P(0), 0, 12);
     useRecall(r, P(0), r.boards[P(0)][0][0]);
-    setBoardCount(r, P(0), 2, rand);
-    expect(r.players[P(0)]).toMatchObject({ bombUsed: false, recallUsed: true, marks: [] });
-    useBomb(r, P(0), 0, 12);
-    newRound(r, P(0), rand, T0);
+    expect(r.players[P(0)]).toMatchObject({ bombUsed: true, recallUsed: true });
+    newRound(r, P(0), rand);
     expect(r.players[P(0)]).toMatchObject({ bombUsed: false, recallUsed: false, marks: [] });
   });
 
@@ -280,12 +326,14 @@ describe('道具', () => {
 });
 
 describe('自動叫號', () => {
-  it('開啟後要按開新的一局才開始；每 10 秒喊一位沒喊過的；期間不能手動喊', () => {
+  it('開啟後要按開始才會叫；每 10 秒喊一位沒喊過的；期間不能手動喊', () => {
     const r = roomWith('A', 'B');
     updateSettings(r, P(0), { autoCall: true });
     expect(r.autoRunning).toBe(false);
     expect(autoCallTick(r, T0 + 99_999, rand)).toBeNull();
-    newRound(r, P(0), rand, T0);
+    newRound(r, P(0), rand);
+    expect(r.autoRunning).toBe(false); // 準備中還不會叫
+    start(r);
     expect(r.autoRunning).toBe(true);
     expect(r.nextAutoAt).toBe(T0 + AUTO_CALL_MS);
     expect(autoCallTick(r, T0 + AUTO_CALL_MS - 1, rand)).toBeNull(); // 還沒到
@@ -303,12 +351,12 @@ describe('自動叫號', () => {
     expect(s.settings.autoCall).toBe(true);
   });
 
-  it('不會喊到已喊或被遣返的；有人 BINGO 就停；房主關掉也停', () => {
+  it('不會喊到已喊或被遣返的；有人 BINGO 就停；開新的一局也停', () => {
     const r = roomWith('A');
     r.items = true;
     r.target = 1;
     updateSettings(r, P(0), { autoCall: true });
-    newRound(r, P(0), rand, T0);
+    start(r);
     const b = r.boards[P(0)][0];
     // 先把第 1 橫排以外、除了 b[4] 的英雄都塞進已喊，讓自動叫號只剩 b[4] 和 b[3] 可抽
     r.autoRunning = false;
@@ -327,7 +375,7 @@ describe('自動叫號', () => {
     const r2 = roomWith('A');
     r2.target = 1;
     updateSettings(r2, P(0), { autoCall: true });
-    newRound(r2, P(0), rand, T0);
+    startRound(r2, P(0), T0);
     const b2 = r2.boards[P(0)][0];
     r2.autoRunning = false;
     for (const i of [0, 1, 2, 3]) callChampion(r2, P(0), b2[i]);
@@ -344,8 +392,9 @@ describe('自動叫號', () => {
 
     const r3 = roomWith('A');
     updateSettings(r3, P(0), { autoCall: true });
-    newRound(r3, P(0), rand, T0);
-    expect(updateSettings(r3, P(0), { autoCall: false })).toEqual({ autoCall: false });
+    startRound(r3, P(0), T0);
+    expect(r3.autoRunning).toBe(true);
+    newRound(r3, P(0), rand); // 開新的一局就停，回到準備中
     expect(r3.autoRunning).toBe(false);
     expect(autoCallTick(r3, T0 + AUTO_CALL_MS, rand)).toBeNull();
   });
@@ -411,6 +460,7 @@ describe('房主交接與在線', () => {
   it('公開狀態含條數、BINGO、在線、房主', () => {
     const r = roomWith('A', 'B');
     r.target = 1;
+    start(r);
     callLine(r, P(1));
     evaluateBingo(r);
     const t = T0 + 1000;
